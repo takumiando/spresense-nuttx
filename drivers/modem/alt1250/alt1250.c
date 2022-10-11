@@ -30,6 +30,7 @@
 #include <errno.h>
 #include <nuttx/wireless/lte/lte_ioctl.h>
 #include <nuttx/modem/alt1250.h>
+#include <nuttx/power/pm.h>
 #include <assert.h>
 
 #include "altcom_pkt.h"
@@ -63,6 +64,13 @@ parse_handler_t alt1250_additional_parsehdlr(uint16_t, uint8_t);
 compose_handler_t alt1250_additional_composehdlr(uint32_t,
     FAR uint8_t *, size_t);
 
+#ifdef CONFIG_PM
+static int alt1250_pm_prepare(struct pm_callback_s *cb, int domain,
+                              enum pm_state_e pmstate);
+static void alt1250_pm_notify(struct pm_callback_s *cb, int domain,
+                              enum pm_state_e pmstate);
+#endif
+
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -81,6 +89,14 @@ static const struct file_operations g_alt1250fops =
 };
 static uint8_t g_recvbuff[ALTCOM_RX_PKT_SIZE_MAX];
 static uint8_t g_sendbuff[ALTCOM_PKT_SIZE_MAX];
+
+#ifdef CONFIG_PM
+static struct pm_callback_s g_alt1250pmcb =
+{
+  .notify  = alt1250_pm_notify,
+  .prepare = alt1250_pm_prepare,
+};
+#endif
 
 /****************************************************************************
  * Private Functions
@@ -1264,6 +1280,37 @@ errout:
   return ret;
 }
 
+#ifdef CONFIG_PM
+/****************************************************************************
+ * Name: alt1250_pm_prepare
+ ****************************************************************************/
+
+static int alt1250_pm_prepare(struct pm_callback_s *cb, int domain,
+                              enum pm_state_e pmstate)
+{
+  if (pmstate == PM_SLEEP)
+    {
+      /* TODO: Implement Prepare process */
+
+      return OK;
+    }
+  else
+    {
+      return OK;
+    }
+}
+
+/****************************************************************************
+ * Name: alt1250_pm_notify
+ ****************************************************************************/
+
+static void alt1250_pm_notify(struct pm_callback_s *cb, int domain,
+                              enum pm_state_e pmstate)
+{
+  /* TODO: Implement Notify process */
+}
+#endif
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -1288,6 +1335,17 @@ FAR void *alt1250_register(FAR const char *devpath,
   priv->lower = lower;
 
   nxsem_init(&priv->refslock, 0, 1);
+
+#ifdef CONFIG_PM
+  ret = pm_register(&g_alt1250pmcb);
+
+  if (ret != OK)
+    {
+      m_err("Failed to register PM: %d\n", ret);
+      kmm_free(priv);
+      return NULL;
+    }
+#endif
 
   ret = register_driver(devpath, &g_alt1250fops, 0666, priv);
   if (ret < 0)
