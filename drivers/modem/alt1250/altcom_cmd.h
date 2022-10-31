@@ -75,6 +75,23 @@
 #define APICMD_EDRX_ACTTYPE_WBS1     (4) /* E-UTRAN (WB-S1 mode) */
 #define APICMD_EDRX_ACTTYPE_NBS1     (5) /* E-UTRAN (NB-S1 mode) */
 
+#define APICMD_EDRX_CYC_512          (0)
+#define APICMD_EDRX_CYC_1024         (1)
+#define APICMD_EDRX_CYC_2048         (2)
+#define APICMD_EDRX_CYC_4096         (3)
+#define APICMD_EDRX_CYC_6144         (4)
+#define APICMD_EDRX_CYC_8192         (5)
+#define APICMD_EDRX_CYC_10240        (6)
+#define APICMD_EDRX_CYC_12288        (7)
+#define APICMD_EDRX_CYC_14336        (8)
+#define APICMD_EDRX_CYC_16384        (9)
+#define APICMD_EDRX_CYC_32768        (10)
+#define APICMD_EDRX_CYC_65536        (11)
+#define APICMD_EDRX_CYC_131072       (12)
+#define APICMD_EDRX_CYC_262144       (13)
+#define APICMD_EDRX_CYC_524288       (14)
+#define APICMD_EDRX_CYC_1048576      (15)
+
 #define APICMD_ENTERPIN_NEWPINCODE_UNUSE         (0)
 #define APICMD_ENTERPIN_NEWPINCODE_USE           (1)
 #define APICMD_ENTERPIN_PINCODE_LEN              9
