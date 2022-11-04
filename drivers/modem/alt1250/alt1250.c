@@ -818,6 +818,7 @@ static void altcom_recvthread(FAR void *arg)
 
                   m_info("receive errind cid:0x%04x tid:0x%04x\n", cid, tid);
 
+                  cid |= ALTCOM_CMDID_REPLY_BIT;
                   container = remove_list(&dev->waitlist, cid, tid);
                   if (container)
                     {
