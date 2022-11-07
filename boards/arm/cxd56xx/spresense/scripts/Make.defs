@@ -59,8 +59,8 @@ LDMODULEFLAGS += -T $(call CONVERT_PATH,$(TOPDIR)/libs/libc/modlib/gnu-elf.ld)
 
 # ELF module definitions
 
-CELFFLAGS = $(CFLAGS) -fno-common
-CXXELFFLAGS = $(CXXFLAGS) -fno-common
+CELFFLAGS = $(CFLAGS)
+CXXELFFLAGS = $(CXXFLAGS)
 
 LDELFFLAGS = -r -e main
 LDELFFLAGS += -T $(call CONVERT_PATH,$(TOPDIR)/binfmt/libelf/gnu-elf.ld)
