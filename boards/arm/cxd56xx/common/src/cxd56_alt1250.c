@@ -77,7 +77,7 @@
  * Private Function Prototypes
  ****************************************************************************/
 
-static FAR struct spi_dev_s *alt1250_poweron(void);
+static struct spi_dev_s *alt1250_poweron(void);
 static void alt1250_poweroff(void);
 static void alt1250_reset(void);
 static void alt1250_irqattach(xcpt_t handler);
@@ -174,7 +174,7 @@ static void spi_pincontrol(int bus, bool on)
  *
  ****************************************************************************/
 
-static void set_spiparam(FAR struct spi_dev_s *spidev)
+static void set_spiparam(struct spi_dev_s *spidev)
 {
   SPI_LOCK(spidev, true);
   SPI_SETMODE(spidev, SPIDEV_MODE0);
@@ -191,9 +191,9 @@ static void set_spiparam(FAR struct spi_dev_s *spidev)
  *
  ****************************************************************************/
 
-static FAR struct spi_dev_s *alt1250_poweron(void)
+static struct spi_dev_s *alt1250_poweron(void)
 {
-  FAR struct spi_dev_s *spi;
+  struct spi_dev_s *spi;
 #if defined(CONFIG_CXD56_LTE_SPI4_DMAC) || defined(CONFIG_CXD56_LTE_SPI5_DMAC)
   DMA_HANDLE            hdl;
   dma_config_t          conf;
@@ -411,7 +411,7 @@ static void alt1250_set_wakeup(bool on)
  *
  ****************************************************************************/
 
-int board_alt1250_initialize(FAR const char *devpath)
+int board_alt1250_initialize(const char *devpath)
 {
   m_info("Initializing ALT1250..\n");
 

@@ -342,7 +342,7 @@ int cxd56_bringup(void)
   ret = board_pwm_setup();
   if (ret < 0)
     {
-      _err("ERROR: Failed to initialize pwm. \n");
+      _err("ERROR: Failed to initialize pwm.\n");
     }
 #endif
 
@@ -350,7 +350,7 @@ int cxd56_bringup(void)
   ret = cxd56_adcinitialize();
   if (ret < 0)
     {
-      _err("ERROR: Failed to initialize adc. \n");
+      _err("ERROR: Failed to initialize adc.\n");
     }
 #endif
 
@@ -358,7 +358,7 @@ int cxd56_bringup(void)
   ret = userled_lower_initialize("/dev/userleds");
   if (ret < 0)
     {
-      _err("ERROR: Failed to initialize led. \n");
+      _err("ERROR: Failed to initialize led.\n");
     }
 #endif
 
@@ -421,7 +421,7 @@ int cxd56_bringup(void)
   ret = board_sdcard_initialize();
   if (ret < 0)
     {
-      _err("ERROR: Failed to initialize sdhci. \n");
+      _err("ERROR: Failed to initialize sdhci.\n");
     }
 #endif
 
@@ -459,7 +459,7 @@ int cxd56_bringup(void)
   ret = board_gs2200m_initialize("/dev/gs2200m", 5);
   if (ret < 0)
     {
-      _err("ERROR: Failed to initialize GS2200M. \n");
+      _err("ERROR: Failed to initialize GS2200M.\n");
     }
 #endif
 
@@ -467,7 +467,7 @@ int cxd56_bringup(void)
   ret = board_wiznet_initialize("/dev/wiznet");
   if (ret < 0)
     {
-      _err("ERROR: Failed to initialize W5x00. \n");
+      _err("ERROR: Failed to initialize W5x00.\n");
     }
 #endif
 
@@ -475,7 +475,7 @@ int cxd56_bringup(void)
   ret = board_alt1250_initialize("/dev/alt1250");
   if (ret < 0)
     {
-      _err("ERROR: Failed to initialize ALT1250. \n");
+      _err("ERROR: Failed to initialize ALT1250.\n");
     }
 #endif
 
@@ -483,7 +483,7 @@ int cxd56_bringup(void)
   ret = cxd56_gnssinitialize("/dev/gps");
   if (ret < 0)
     {
-      _err("ERROR: Failed to initialize gnss. \n");
+      _err("ERROR: Failed to initialize gnss.\n");
     }
 #endif
 
@@ -491,7 +491,7 @@ int cxd56_bringup(void)
   ret = cxd56_geofenceinitialize("/dev/geofence");
   if (ret < 0)
     {
-      _err("ERROR: Failed to initialize geofence. \n");
+      _err("ERROR: Failed to initialize geofence.\n");
     }
 #endif
 

@@ -46,39 +46,39 @@
 
 /* Wait time on power on sequence. */
 
-#define TRANSITION_TIME_TO_STARTUP   (130 * 1000) /* unit : usec */
-#define TRANSITION_TIME_TO_STREAMING (40 * 1000)  /* unit : usec */
-#define DELAY_TIME_JPEGDQT_SWAP      (35 * 1000)  /* unit : usec */
+#define TRANSITION_TIME_TO_STARTUP   (130 * USEC_PER_MSEC) /* unit : usec */
+#define TRANSITION_TIME_TO_STREAMING (40 * USEC_PER_MSEC)  /* unit : usec */
+#define DELAY_TIME_JPEGDQT_SWAP      (35 * USEC_PER_MSEC)  /* unit : usec */
 
 /* For get_supported_value() I/F */
 
 #define SET_RANGE(range, min, max, s, def) \
         do                                 \
           {                                \
-            range.minimum       = min;     \
-            range.maximum       = max;     \
-            range.step          = s;       \
-            range.default_value = def;     \
+            (range).minimum       = (min); \
+            (range).maximum       = (max); \
+            (range).step          = (s);   \
+            (range).default_value = (def); \
           }                                \
         while (0);
 
-#define SET_DISCRETE(disc, nr, val, def) \
-        do                               \
-          {                              \
-            disc.nr_values     = nr;     \
-            disc.values        = val;    \
-            disc.default_value = def;    \
-          }                              \
+#define SET_DISCRETE(disc, nr, val, def)   \
+        do                                 \
+          {                                \
+            (disc).nr_values     = (nr);   \
+            (disc).values        = (val);  \
+            (disc).default_value = (def);  \
+          }                                \
         while (0);
 
-#define SET_ELEMS(elem, nr, min, max, s) \
-        do                               \
-          {                              \
-            elem.nr_elems      = nr;     \
-            elem.minimum       = min;    \
-            elem.maximum       = max;    \
-            elem.step          = s;      \
-          }                              \
+#define SET_ELEMS(elem, nr, min, max, s)   \
+        do                                 \
+          {                                \
+            (elem).nr_elems      = (nr);   \
+            (elem).minimum       = (min);  \
+            (elem).maximum       = (max);  \
+            (elem).step          = (s);    \
+          }                                \
         while (0);
 
 #define COMPARE_FRAMESIZE(w, h, sup_w, sup_h)  (((w) == (sup_w)) && \
@@ -217,10 +217,10 @@ struct isx019_dev_s
 
 typedef struct isx019_dev_s isx019_dev_t;
 
-typedef int32_t (*convert_t)(int32_t value32);
+typedef CODE int32_t (*convert_t)(int32_t value32);
 
-typedef int (*setvalue_t)(imgsensor_value_t value);
-typedef int (*getvalue_t)(imgsensor_value_t *value);
+typedef CODE int (*setvalue_t)(imgsensor_value_t value);
+typedef CODE int (*getvalue_t)(FAR imgsensor_value_t *value);
 
 struct isx019_reginfo_s
 {
@@ -263,7 +263,7 @@ typedef struct isx019_fpga_jpg_quality_s isx019_fpga_jpg_quality_t;
 static bool isx019_is_available(void);
 static int isx019_init(void);
 static int isx019_uninit(void);
-static const char *isx019_get_driver_name(void);
+static FAR const char *isx019_get_driver_name(void);
 static int isx019_validate_frame_setting(imgsensor_stream_type_t type,
                                          uint8_t nr_datafmt,
                                          FAR imgsensor_format_t *datafmts,
@@ -275,15 +275,15 @@ static int isx019_start_capture(imgsensor_stream_type_t type,
 static int isx019_stop_capture(imgsensor_stream_type_t type);
 static int isx019_get_frame_interval(imgsensor_stream_type_t type,
                                      FAR imgsensor_interval_t *interval);
-static int isx019_get_supported_value
-             (uint32_t id, FAR imgsensor_supported_value_t *value);
-static int isx019_get_value
-             (uint32_t id, uint32_t size, FAR imgsensor_value_t *value);
-static int isx019_set_value
-             (uint32_t id, uint32_t size, imgsensor_value_t value);
+static int isx019_get_supported_value(uint32_t id,
+                                     FAR imgsensor_supported_value_t *value);
+static int isx019_get_value(uint32_t id, uint32_t size,
+                            FAR imgsensor_value_t *value);
+static int isx019_set_value(uint32_t id, uint32_t size,
+                            imgsensor_value_t value);
 static int initialize_jpg_quality(void);
 static void initialize_wbmode(void);
-static int send_read_cmd(struct i2c_config_s *config,
+static int send_read_cmd(FAR struct i2c_config_s *config,
                          uint8_t cat,
                          uint16_t addr,
                          uint8_t size);
@@ -296,17 +296,17 @@ static isx019_dev_t g_isx019_private;
 
 static struct imgsensor_ops_s g_isx019_ops =
 {
-  .is_available           = isx019_is_available,
-  .init                   = isx019_init,
-  .uninit                 = isx019_uninit,
-  .get_driver_name        = isx019_get_driver_name,
-  .validate_frame_setting = isx019_validate_frame_setting,
-  .start_capture          = isx019_start_capture,
-  .stop_capture           = isx019_stop_capture,
-  .get_frame_interval     = isx019_get_frame_interval,
-  .get_supported_value    = isx019_get_supported_value,
-  .get_value              = isx019_get_value,
-  .set_value              = isx019_set_value,
+  isx019_is_available,
+  isx019_init,
+  isx019_uninit,
+  isx019_get_driver_name,
+  isx019_validate_frame_setting,
+  isx019_start_capture,
+  isx019_stop_capture,
+  isx019_get_frame_interval,
+  isx019_get_supported_value,
+  isx019_get_value,
+  isx019_set_value,
 };
 
 static isx019_fpga_jpg_quality_t g_isx019_jpg_quality[] =
@@ -791,7 +791,7 @@ static void fpga_unlock(void)
   nxsem_post(&g_isx019_private.fpga_lock);
 }
 
-static int fpga_i2c_write(uint8_t addr, uint8_t *data, uint8_t size)
+static int fpga_i2c_write(uint8_t addr, FAR uint8_t *data, uint8_t size)
 {
   struct i2c_config_s config;
   static uint8_t buf[FPGA_I2C_REGSIZE_MAX + FPGA_I2C_REGADDR_LEN];
@@ -824,7 +824,7 @@ static int fpga_i2c_write(uint8_t addr, uint8_t *data, uint8_t size)
   return ret;
 }
 
-static int fpga_i2c_read(uint8_t addr, uint8_t *data, uint8_t size)
+static int fpga_i2c_read(uint8_t addr, FAR uint8_t *data, uint8_t size)
 {
   int ret;
   struct i2c_config_s config;
@@ -874,7 +874,7 @@ static void fpga_activate_setting(void)
     }
 }
 
-static uint8_t calc_isx019_chksum(uint8_t *data, uint8_t len)
+static uint8_t calc_isx019_chksum(FAR uint8_t *data, uint8_t len)
 {
   int i;
   uint8_t chksum = 0;
@@ -891,16 +891,16 @@ static uint8_t calc_isx019_chksum(uint8_t *data, uint8_t len)
   return chksum;
 }
 
-static bool validate_isx019_chksum(uint8_t *data, uint8_t len)
+static bool validate_isx019_chksum(FAR uint8_t *data, uint8_t len)
 {
   uint8_t chksum;
 
   chksum = calc_isx019_chksum(data, len - 1);
 
-  return (data[len - 1] == chksum) ? true : false;
+  return (data[len - 1] == chksum);
 }
 
-static int recv_write_response(struct i2c_config_s *config)
+static int recv_write_response(FAR struct i2c_config_s *config)
 {
   int ret;
   uint8_t buf[ISX019_I2C_WRRES_TOTALLEN];
@@ -923,8 +923,8 @@ static int recv_write_response(struct i2c_config_s *config)
   return OK;
 }
 
-static int recv_read_response(struct i2c_config_s *config,
-                              uint8_t *data,
+static int recv_read_response(FAR struct i2c_config_s *config,
+                              FAR uint8_t *data,
                               uint8_t size)
 {
   int ret;
@@ -956,10 +956,10 @@ static int recv_read_response(struct i2c_config_s *config,
   return OK;
 }
 
-static int send_write_cmd(struct i2c_config_s *config,
+static int send_write_cmd(FAR struct i2c_config_s *config,
                           uint8_t cat,
                           uint16_t addr,
-                          uint8_t *data,
+                          FAR uint8_t *data,
                           uint8_t size)
 {
   int len;
@@ -989,7 +989,7 @@ static int send_write_cmd(struct i2c_config_s *config,
 
 static int isx019_i2c_write(uint8_t cat,
                             uint16_t addr,
-                            uint8_t *data,
+                            FAR uint8_t *data,
                             uint8_t size)
 {
   int ret;
@@ -1013,10 +1013,10 @@ static int isx019_i2c_write(uint8_t cat,
   return ret;
 }
 
-static int send_read_cmd(struct i2c_config_s *config,
-                          uint8_t cat,
-                          uint16_t addr,
-                          uint8_t size)
+static int send_read_cmd(FAR struct i2c_config_s *config,
+                         uint8_t cat,
+                         uint16_t addr,
+                         uint8_t size)
 {
   int ret;
   int len;
@@ -1042,10 +1042,10 @@ static int send_read_cmd(struct i2c_config_s *config,
   return ret;
 }
 
-static int isx019_i2c_read(uint8_t  cat,
+static int isx019_i2c_read(uint8_t cat,
                            uint16_t addr,
-                           uint8_t  *data,
-                           uint8_t  size)
+                           FAR uint8_t *data,
+                           uint8_t size)
 {
   int ret;
   struct i2c_config_s config;
@@ -1105,7 +1105,7 @@ static int set_drive_mode(void)
   return OK;
 }
 
-static bool try_repeat(int sec, int usec, int (* trial_func)(void))
+static bool try_repeat(int sec, int usec, CODE int (*trial_func)(void))
 {
   int ret;
   struct timeval start;
@@ -1135,7 +1135,7 @@ static bool try_repeat(int sec, int usec, int (* trial_func)(void))
         }
     };
 
-  return (ret == OK) ? true : false;
+  return (ret == OK);
 }
 
 static int try_isx019_i2c(void)
@@ -1201,7 +1201,7 @@ static int32_t get_value32(uint32_t id)
 
 static void store_default_value(void)
 {
-  isx019_default_value_t *def = &g_isx019_private.default_value;
+  FAR isx019_default_value_t *def = &g_isx019_private.default_value;
 
   def->brightness   = get_value32(IMGSENSOR_ID_BRIGHTNESS);
   def->contrast     = get_value32(IMGSENSOR_ID_CONTRAST);
@@ -1250,14 +1250,14 @@ static int isx019_uninit(void)
   return OK;
 }
 
-static const char *isx019_get_driver_name(void)
+static FAR const char *isx019_get_driver_name(void)
 {
 #ifdef CONFIG_VIDEO_ISX019_NAME_WITH_VERSION
   static char name[16];
   uint8_t f_ver = 0;
   uint16_t is_ver = 0;
 
-  isx019_i2c_read(CAT_VERSION, ROM_VERSION, (uint8_t *)&is_ver, 2);
+  isx019_i2c_read(CAT_VERSION, ROM_VERSION, (FAR uint8_t *)&is_ver, 2);
   fpga_i2c_read(FPGA_VERSION, &f_ver, 1);
   snprintf(name, sizeof(name), "ISX019 v%04x_%02d", is_ver, f_ver);
 
@@ -1395,7 +1395,7 @@ static int activate_clip(imgsensor_stream_type_t type,
                          uint16_t w,
                          uint16_t h)
 {
-  isx019_rect_t *clip;
+  FAR isx019_rect_t *clip;
   uint8_t size;
   uint8_t top;
   uint8_t left = 0;
@@ -1723,11 +1723,11 @@ static int isx019_get_frame_interval(imgsensor_stream_type_t type,
   return OK;
 }
 
-static int isx019_get_supported_value
-             (uint32_t id, FAR imgsensor_supported_value_t *val)
+static int isx019_get_supported_value(uint32_t id,
+                                      FAR imgsensor_supported_value_t *val)
 {
   int ret = OK;
-  struct isx019_default_value_s *def = &g_isx019_private.default_value;
+  FAR struct isx019_default_value_s *def = &g_isx019_private.default_value;
 
   DEBUGASSERT(val);
 
@@ -1972,7 +1972,8 @@ static int32_t convert_hdr_reg2is(int32_t val)
   return ret;
 }
 
-static convert_t get_reginfo(uint32_t id, bool is_set, isx019_reginfo_t *reg)
+static convert_t get_reginfo(uint32_t id, bool is_set,
+                             FAR isx019_reginfo_t *reg)
 {
   convert_t cvrt = NULL;
 
@@ -2023,7 +2024,7 @@ static convert_t get_reginfo(uint32_t id, bool is_set, isx019_reginfo_t *reg)
   return cvrt;
 }
 
-static void set_flip(uint8_t *flip, uint8_t direction, int32_t val)
+static void set_flip(FAR uint8_t *flip, uint8_t direction, int32_t val)
 {
   DEBUGASSERT(flip);
 
@@ -2077,7 +2078,7 @@ static int set_vflip_still(imgsensor_value_t val)
 static int set_colorfx(imgsensor_value_t val)
 {
   int ret = -EINVAL;
-  isx019_default_value_t *def = &g_isx019_private.default_value;
+  FAR isx019_default_value_t *def = &g_isx019_private.default_value;
   int32_t sat;
   int32_t sharp;
 
@@ -2112,12 +2113,12 @@ static int set_colorfx(imgsensor_value_t val)
         break;
     }
 
-  ret = isx019_i2c_write(CAT_PICTTUNE, UISATURATION, (uint8_t *)&sat, 1);
+  ret = isx019_i2c_write(CAT_PICTTUNE, UISATURATION, (FAR uint8_t *)&sat, 1);
   if (ret == OK)
     {
       ret = isx019_i2c_write(CAT_PICTTUNE,
                              UISHARPNESS,
-                             (uint8_t *)&sharp,
+                             (FAR uint8_t *)&sharp,
                              1);
       if (ret == OK)
         {
@@ -2138,10 +2139,10 @@ static int set_ae(imgsensor_value_t val)
     }
   else
     {
-      isx019_i2c_read(CAT_AESOUT, SHT_TIME, (uint8_t *)&regval, 4);
+      isx019_i2c_read(CAT_AESOUT, SHT_TIME, (FAR uint8_t *)&regval, 4);
     }
 
-  return isx019_i2c_write(CAT_CATAE, SHT_PRIMODE, (uint8_t *)&regval, 4);
+  return isx019_i2c_write(CAT_CATAE, SHT_PRIMODE, (FAR uint8_t *)&regval, 4);
 }
 
 static int set_exptime(imgsensor_value_t val)
@@ -2155,7 +2156,7 @@ static int set_exptime(imgsensor_value_t val)
 
   regval = val.value32 * 100 * g_isx019_private.clock_ratio;
 
-  return isx019_i2c_write(CAT_CATAE, SHT_PRIMODE, (uint8_t *)&regval, 4);
+  return isx019_i2c_write(CAT_CATAE, SHT_PRIMODE, (FAR uint8_t *)&regval, 4);
 }
 
 static int set_awb_hold(void)
@@ -2234,9 +2235,9 @@ static int update_wbmode_reg(int32_t val)
         break;
     }
 
-  isx019_i2c_write(CAT_AWB_USERTYPE, r_addr, (uint8_t *)&r, 2);
-  isx019_i2c_write(CAT_AWB_USERTYPE, b_addr, (uint8_t *)&b, 2);
-  isx019_i2c_write(CAT_CATAWB, AWBUSER_NO, (uint8_t *)&toggle, 1);
+  isx019_i2c_write(CAT_AWB_USERTYPE, r_addr, (FAR uint8_t *)&r, 2);
+  isx019_i2c_write(CAT_AWB_USERTYPE, b_addr, (FAR uint8_t *)&b, 2);
+  isx019_i2c_write(CAT_CATAWB, AWBUSER_NO, (FAR uint8_t *)&toggle, 1);
   isx019_i2c_write(CAT_CATAWB, AWBMODE, &mode, 1);
 
   return OK;
@@ -2362,14 +2363,14 @@ static int set_3aparameter(imgsensor_value_t val)
   (CAT_AWB_USERTYPE, USER4_B, &val.p_u8[OFFSET_3APARAMETER_AWB_B], 2);
 
   regval = 4;
-  isx019_i2c_write(CAT_CATAWB, AWBUSER_NO, (uint8_t *)&regval, 1);
+  isx019_i2c_write(CAT_CATAWB, AWBUSER_NO, (FAR uint8_t *)&regval, 1);
 
   regval = AWBMODE_MANUAL;
   isx019_i2c_write(CAT_CATAWB, AWBMODE, &regval, 1);
 
   isx019_i2c_write
   (CAT_CATAE, SHT_PRIMODE, &val.p_u8[OFFSET_3APARAMETER_AE_SHTTIME], 4);
-  isx019_i2c_write(CAT_CATAE, GAIN_PRIMODE, (uint8_t *)&gain, 2);
+  isx019_i2c_write(CAT_CATAE, GAIN_PRIMODE, (FAR uint8_t *)&gain, 2);
 
   return OK;
 }
@@ -2397,7 +2398,7 @@ static int set_iso(imgsensor_value_t val)
    */
 
   gain = calc_gain(val.value32 / 1000);
-  isx019_i2c_write(CAT_CATAE, GAIN_PRIMODE, (uint8_t *)&gain, 2);
+  isx019_i2c_write(CAT_CATAE, GAIN_PRIMODE, (FAR uint8_t *)&gain, 2);
 
   g_isx019_private.iso = val.value32;
   return OK;
@@ -2415,7 +2416,7 @@ static int set_iso_auto(imgsensor_value_t val)
     }
   else /* IMGSENSOR_ISO_SENSITIVITY_MANUAL */
     {
-      isx019_i2c_read(CAT_CATAE, GAIN_PRIMODE, (uint8_t *)&gain, 2);
+      isx019_i2c_read(CAT_CATAE, GAIN_PRIMODE, (FAR uint8_t *)&gain, 2);
 
       if (gain == 0)
         {
@@ -2433,7 +2434,7 @@ static int set_iso_auto(imgsensor_value_t val)
       g_isx019_private.iso = val.value32;
     }
 
-  return isx019_i2c_write(CAT_CATAE, GAIN_PRIMODE, (uint8_t *)&gain, 2);
+  return isx019_i2c_write(CAT_CATAE, GAIN_PRIMODE, (FAR uint8_t *)&gain, 2);
 }
 
 static uint16_t calc_gamma_regval(double in, double gamma)
@@ -2471,7 +2472,7 @@ static int set_gamma(imgsensor_value_t val)
   for (i = 0; i < NR_GAM_KNOT_LOWINPUT; i++)
     {
       regval = calc_gamma_regval((double)i * GAM_LOWINPUT_INTERVAL, gamma);
-      isx019_i2c_write(CAT_PICTGAMMA, offset, (uint8_t *)&regval, 2);
+      isx019_i2c_write(CAT_PICTGAMMA, offset, (FAR uint8_t *)&regval, 2);
       offset += 2;
     }
 
@@ -2481,7 +2482,7 @@ static int set_gamma(imgsensor_value_t val)
     {
       regval = calc_gamma_regval
                ((double)(i + 1) * GAM_HIGHINPUT_INTERVAL, gamma);
-      isx019_i2c_write(CAT_PICTGAMMA, offset, (uint8_t *)&regval, 2);
+      isx019_i2c_write(CAT_PICTGAMMA, offset, (FAR uint8_t *)&regval, 2);
       offset += 2;
     }
 
@@ -2492,21 +2493,21 @@ static int set_gamma(imgsensor_value_t val)
    * GAM_KNOT_C9 = GAM_KNOT_C11.
    */
 
-  isx019_i2c_read(CAT_PICTGAMMA,  GAM_KNOT_C8, (uint8_t *)&regval, 2);
-  isx019_i2c_write(CAT_PICTGAMMA, GAM_KNOT_C10, (uint8_t *)&regval, 2);
-  isx019_i2c_read(CAT_PICTGAMMA,  GAM_KNOT_C11, (uint8_t *)&regval, 2);
-  isx019_i2c_write(CAT_PICTGAMMA, GAM_KNOT_C9, (uint8_t *)&regval, 2);
+  isx019_i2c_read(CAT_PICTGAMMA,  GAM_KNOT_C8, (FAR uint8_t *)&regval, 2);
+  isx019_i2c_write(CAT_PICTGAMMA, GAM_KNOT_C10, (FAR uint8_t *)&regval, 2);
+  isx019_i2c_read(CAT_PICTGAMMA,  GAM_KNOT_C11, (FAR uint8_t *)&regval, 2);
+  isx019_i2c_write(CAT_PICTGAMMA, GAM_KNOT_C9, (FAR uint8_t *)&regval, 2);
 
   g_isx019_private.gamma = val.value32;
   return OK;
 }
 
 static void search_dqt_data(int32_t quality,
-                            uint8_t **y_head, uint8_t **y_calc,
-                            uint8_t **c_head, uint8_t **c_calc)
+                            FAR uint8_t **y_head, FAR uint8_t **y_calc,
+                            FAR uint8_t **c_head, FAR uint8_t **c_calc)
 {
   int i;
-  isx019_fpga_jpg_quality_t *jpg = &g_isx019_jpg_quality[0];
+  FAR isx019_fpga_jpg_quality_t *jpg = &g_isx019_jpg_quality[0];
 
   *y_head = NULL;
   *y_calc = NULL;
@@ -2538,7 +2539,7 @@ static void search_dqt_data(int32_t quality,
     }
 }
 
-int set_dqt(uint8_t component, uint8_t target, uint8_t *buf)
+int set_dqt(uint8_t component, uint8_t target, FAR uint8_t *buf)
 {
   int i;
   uint8_t addr;
@@ -2572,10 +2573,10 @@ int set_dqt(uint8_t component, uint8_t target, uint8_t *buf)
 
 static int set_jpg_quality(imgsensor_value_t val)
 {
-  uint8_t *y_head;
-  uint8_t *y_calc;
-  uint8_t *c_head;
-  uint8_t *c_calc;
+  FAR uint8_t *y_head;
+  FAR uint8_t *y_calc;
+  FAR uint8_t *c_head;
+  FAR uint8_t *c_calc;
 
   /* Set JPEG quality by setting DQT information to FPGA. */
 
@@ -2623,7 +2624,7 @@ static int initialize_jpg_quality(void)
   return set_jpg_quality(val);
 }
 
-static bool validate_clip_setting(uint32_t *clip)
+static bool validate_clip_setting(FAR uint32_t *clip)
 {
   bool ret = false;
   uint32_t w;
@@ -2644,7 +2645,7 @@ static bool validate_clip_setting(uint32_t *clip)
   return ret;
 }
 
-static int set_clip(uint32_t *val, isx019_rect_t *target)
+static int set_clip(FAR uint32_t *val, FAR isx019_rect_t *target)
 {
   if (val == NULL)
     {
@@ -2766,7 +2767,7 @@ static int32_t get_flip(uint8_t *flip, uint8_t direction)
   return (*flip & direction) ? 1 : 0;
 }
 
-static int get_hflip_video(imgsensor_value_t *val)
+static int get_hflip_video(FAR imgsensor_value_t *val)
 {
   if (val == NULL)
     {
@@ -2777,7 +2778,7 @@ static int get_hflip_video(imgsensor_value_t *val)
   return OK;
 }
 
-static int get_vflip_video(imgsensor_value_t *val)
+static int get_vflip_video(FAR imgsensor_value_t *val)
 {
   if (val == NULL)
     {
@@ -2788,7 +2789,7 @@ static int get_vflip_video(imgsensor_value_t *val)
   return OK;
 }
 
-static int get_hflip_still(imgsensor_value_t *val)
+static int get_hflip_still(FAR imgsensor_value_t *val)
 {
   if (val == NULL)
     {
@@ -2799,7 +2800,7 @@ static int get_hflip_still(imgsensor_value_t *val)
   return OK;
 }
 
-static int get_vflip_still(imgsensor_value_t *val)
+static int get_vflip_still(FAR imgsensor_value_t *val)
 {
   if (val == NULL)
     {
@@ -2810,7 +2811,7 @@ static int get_vflip_still(imgsensor_value_t *val)
   return OK;
 }
 
-static int get_colorfx(imgsensor_value_t *val)
+static int get_colorfx(FAR imgsensor_value_t *val)
 {
   if (val == NULL)
     {
@@ -2821,7 +2822,7 @@ static int get_colorfx(imgsensor_value_t *val)
   return OK;
 }
 
-static int get_ae(imgsensor_value_t *val)
+static int get_ae(FAR imgsensor_value_t *val)
 {
   uint32_t regval;
 
@@ -2830,7 +2831,7 @@ static int get_ae(imgsensor_value_t *val)
       return -EINVAL;
     }
 
-  isx019_i2c_read(CAT_CATAE, SHT_PRIMODE, (uint8_t *)&regval, 4);
+  isx019_i2c_read(CAT_CATAE, SHT_PRIMODE, (FAR uint8_t *)&regval, 4);
 
   val->value32 = (regval == 0) ? IMGSENSOR_EXPOSURE_AUTO
                                : IMGSENSOR_EXPOSURE_MANUAL;
@@ -2838,11 +2839,11 @@ static int get_ae(imgsensor_value_t *val)
   return OK;
 }
 
-static int get_exptime(imgsensor_value_t *val)
+static int get_exptime(FAR imgsensor_value_t *val)
 {
   uint32_t regval;
 
-  isx019_i2c_read(CAT_AESOUT, SHT_TIME, (uint8_t *)&regval, 4);
+  isx019_i2c_read(CAT_AESOUT, SHT_TIME, (FAR uint8_t *)&regval, 4);
 
   /* Round up to the nearest 100usec for eliminating errors in reverting to
    * application value because this driver converts application value to
@@ -2854,7 +2855,7 @@ static int get_exptime(imgsensor_value_t *val)
   return OK;
 }
 
-static int get_awb(imgsensor_value_t *val)
+static int get_awb(FAR imgsensor_value_t *val)
 {
   if (val == NULL)
     {
@@ -2866,7 +2867,7 @@ static int get_awb(imgsensor_value_t *val)
   return OK;
 }
 
-static int get_wbmode(imgsensor_value_t *val)
+static int get_wbmode(FAR imgsensor_value_t *val)
 {
   if (val == NULL)
     {
@@ -2878,7 +2879,7 @@ static int get_wbmode(imgsensor_value_t *val)
   return OK;
 }
 
-static int get_meter(imgsensor_value_t *val)
+static int get_meter(FAR imgsensor_value_t *val)
 {
   uint8_t regval;
 
@@ -2911,7 +2912,7 @@ static int get_meter(imgsensor_value_t *val)
   return OK;
 }
 
-static int get_3alock(imgsensor_value_t *val)
+static int get_3alock(FAR imgsensor_value_t *val)
 {
   uint8_t regval;
   uint8_t awb;
@@ -2933,7 +2934,7 @@ static int get_3alock(imgsensor_value_t *val)
   return OK;
 }
 
-static int get_3aparameter(imgsensor_value_t *val)
+static int get_3aparameter(FAR imgsensor_value_t *val)
 {
   if (val == NULL)
     {
@@ -2957,7 +2958,7 @@ static int get_3aparameter(imgsensor_value_t *val)
   return OK;
 }
 
-static int get_3astatus(imgsensor_value_t *val)
+static int get_3astatus(FAR imgsensor_value_t *val)
 {
   uint8_t regval;
 
@@ -2997,7 +2998,7 @@ static double calc_iso(double gain)
    * calculate 10^z.
    */
 
-  /*  Devide z into integer and other parts.
+  /*  Divide z into integer and other parts.
    *  z =  log10(E) (k * ln2 + r)
    *  (k : integer, r < 0.5 * ln2)
    *
@@ -3012,7 +3013,7 @@ static double calc_iso(double gain)
   return (1 << k) * exp(r);
 }
 
-static int get_iso(imgsensor_value_t *val)
+static int get_iso(FAR imgsensor_value_t *val)
 {
   uint8_t buf = 0;
 
@@ -3029,7 +3030,7 @@ static int get_iso(imgsensor_value_t *val)
        */
 
       isx019_i2c_read(CAT_AECOM, GAIN_LEVEL, &buf, 1);
-      val->value32 = calc_iso((double)buf * 0.3) * 1000;
+      val->value32 = calc_iso((double)buf * 0.3) * USEC_PER_MSEC;
     }
   else
     {
@@ -3039,7 +3040,7 @@ static int get_iso(imgsensor_value_t *val)
   return OK;
 }
 
-static int get_iso_auto(imgsensor_value_t *val)
+static int get_iso_auto(FAR imgsensor_value_t *val)
 {
   uint16_t gain;
 
@@ -3048,14 +3049,14 @@ static int get_iso_auto(imgsensor_value_t *val)
       return -EINVAL;
     }
 
-  isx019_i2c_read(CAT_CATAE, GAIN_PRIMODE, (uint8_t *)&gain, 2);
+  isx019_i2c_read(CAT_CATAE, GAIN_PRIMODE, (FAR uint8_t *)&gain, 2);
 
   val->value32 = (gain == 0) ? IMGSENSOR_ISO_SENSITIVITY_AUTO
                              : IMGSENSOR_ISO_SENSITIVITY_MANUAL;
   return OK;
 }
 
-static int get_gamma(imgsensor_value_t *val)
+static int get_gamma(FAR imgsensor_value_t *val)
 {
   if (val == NULL)
     {
@@ -3067,7 +3068,7 @@ static int get_gamma(imgsensor_value_t *val)
   return OK;
 }
 
-static int get_jpg_quality(imgsensor_value_t *val)
+static int get_jpg_quality(FAR imgsensor_value_t *val)
 {
   if (val == NULL)
     {
@@ -3175,7 +3176,7 @@ static int isx019_get_value(uint32_t id,
   if (cvrt)
     {
       ret = isx019_i2c_read
-            (reg.category, reg.offset, (uint8_t *)&val32, reg.size);
+            (reg.category, reg.offset, (FAR uint8_t *)&val32, reg.size);
       val->value32 = cvrt(val32);
     }
   else
@@ -3190,7 +3191,8 @@ static int isx019_get_value(uint32_t id,
   return ret;
 }
 
-static int validate_range(int32_t val, imgsensor_capability_range_t *range)
+static int validate_range(int32_t val,
+                          FAR imgsensor_capability_range_t *range)
 {
   int ret = OK;
 
@@ -3202,8 +3204,8 @@ static int validate_range(int32_t val, imgsensor_capability_range_t *range)
   return ret;
 }
 
-static int validate_discrete
-           (int32_t val, imgsensor_capability_discrete_t *disc)
+static int validate_discrete(int32_t val,
+                             FAR imgsensor_capability_discrete_t *disc)
 {
   int ret = -EINVAL;
   int i;
@@ -3220,8 +3222,8 @@ static int validate_discrete
   return ret;
 }
 
-static int validate_elems_u8
-           (uint8_t *val, uint32_t sz, imgsensor_capability_elems_t *elems)
+static int validate_elems_u8(FAR uint8_t *val, uint32_t sz,
+                             FAR imgsensor_capability_elems_t *elems)
 {
   int ret = OK;
   int i;
@@ -3244,8 +3246,8 @@ static int validate_elems_u8
   return ret;
 }
 
-static int validate_elems_u16
-           (uint16_t *val, uint32_t sz, imgsensor_capability_elems_t *elems)
+static int validate_elems_u16 (FAR uint16_t *val, uint32_t sz,
+                               FAR imgsensor_capability_elems_t *elems)
 {
   int ret = OK;
   int i;
@@ -3268,8 +3270,8 @@ static int validate_elems_u16
   return ret;
 }
 
-static int validate_elems_u32
-           (uint32_t *val, uint32_t sz, imgsensor_capability_elems_t *elems)
+static int validate_elems_u32 (FAR uint32_t *val, uint32_t sz,
+                               FAR imgsensor_capability_elems_t *elems)
 {
   int ret = OK;
   int i;
@@ -3294,7 +3296,7 @@ static int validate_elems_u32
 
 static int validate_value(uint32_t id,
                           uint32_t size,
-                          FAR imgsensor_value_t val)
+                          imgsensor_value_t val)
 {
   int ret;
   imgsensor_supported_value_t sup;
@@ -3333,7 +3335,7 @@ static int validate_value(uint32_t id,
 
 static int isx019_set_value(uint32_t id,
                             uint32_t size,
-                            FAR imgsensor_value_t val)
+                            imgsensor_value_t val)
 {
   int ret = -EINVAL;
   isx019_reginfo_t reg;
@@ -3352,7 +3354,7 @@ static int isx019_set_value(uint32_t id,
     {
       val32 = cvrt(val.value32);
       ret = isx019_i2c_write
-            (reg.category, reg.offset,  (uint8_t *)&val32, reg.size);
+            (reg.category, reg.offset, (FAR uint8_t *)&val32, reg.size);
     }
   else
     {
@@ -3378,7 +3380,7 @@ int isx019_initialize(void)
   return OK;
 }
 
-int isx019_uninitialize()
+int isx019_uninitialize(void)
 {
   nxsem_destroy(&g_isx019_private.i2c_lock);
   nxsem_destroy(&g_isx019_private.fpga_lock);
@@ -3386,12 +3388,12 @@ int isx019_uninitialize()
 }
 
 #ifdef CONFIG_VIDEO_ISX019_REGDEBUG
-int isx019_read_register(uint8_t  cat,
+int isx019_read_register(uint8_t cat,
                          uint16_t addr,
-                         uint8_t  *buf,
-                         uint8_t  size)
+                         FAR uint8_t *buf,
+                         uint8_t size)
 {
-  int ret = -EINVAL;
+  int ret;
 
   if (cat == 0xff)
     {

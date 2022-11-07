@@ -359,7 +359,7 @@ extern "C"
 
 /* Register image sensor operations. */
 
-int imgsensor_register(const FAR struct imgsensor_ops_s *ops);
+int imgsensor_register(FAR const struct imgsensor_ops_s *ops);
 
 #undef EXTERN
 #ifdef __cplusplus
