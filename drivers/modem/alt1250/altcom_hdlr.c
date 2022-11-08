@@ -2174,7 +2174,7 @@ static int32_t setrepevt_pkt_compose(FAR void **arg,
         }
       else
         {
-          size = -ENOSYS;
+          return -ENOSYS;
         }
 
       out->event = g_set_repevt;
@@ -2197,7 +2197,7 @@ static int32_t setrepevt_pkt_compose(FAR void **arg,
         }
       else
         {
-          size = -ENOSYS;
+          return -ENOSYS;
         }
 
       out->enability = callback ? APICMD_SET_REP_EVT_ENABLE :
