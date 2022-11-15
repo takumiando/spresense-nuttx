@@ -39,9 +39,7 @@
 #define APICMD_ACTIVATEPDN_USERNAME_MAXLEN        (64)
 #define APICMD_ACTIVATEPDN_PASSWORD_MAXLEN        (32)
 
-#define APICMD_CELLINFO_CELLID_MIN    (0)
 #define APICMD_CELLINFO_CELLID_MAX    (503)
-#define APICMD_CELLINFO_EARFCN_MIN    (0)
 #define APICMD_CELLINFO_EARFCN_MAX    (262143)
 #define APICMD_CELLINFO_DIGIT_NUM_MIN (0)
 #define APICMD_CELLINFO_DIGIT_NUM_MAX (9)
@@ -49,24 +47,12 @@
 #define APICMD_CELLINFO_MNC_DIGIT_MIN         (2)
 #define APICMD_CELLINFO_MNC_DIGIT_MAX         (3)
 #define APICMD_CELLINFO_GCID_MAX              (16)
-#define APICMD_CELLINFO_TIMEDIFF_INDEX_MAX    (4095)
-#define APICMD_CELLINFO_TA_MAX                (1282)
-#define APICMD_CELLINFO_SFN_MAX               (0x03FF)
 #define APICMD_CELLINFO_NEIGHBOR_CELL_NUM_MAX (32)
 #define APICMD_CELLINFO_VALID_TIMEDIFFIDX     (1 << 1)
 #define APICMD_CELLINFO_VALID_TA              (1 << 2)
 #define APICMD_CELLINFO_VALID_SFN             (1 << 3)
 #define APICMD_CELLINFO_VALID_RSRP            (1 << 4)
 #define APICMD_CELLINFO_VALID_RSRQ            (1 << 5)
-
-#define APICMD_DATAALLOW_DATAALLOW_ALLOW        (0)
-#define APICMD_DATAALLOW_DATAALLOW_DISALLOW     (1)
-
-#define APICMD_DATAALLOW_DATAROAMALLOW_ALLOW    (0)
-#define APICMD_DATAALLOW_DATAROAMALLOW_DISALLOW (1)
-
-#define APICMD_DEACTIVATEPDN_SESSIONID_MIN          (0)
-#define APICMD_DEACTIVATEPDN_SESSIONID_MAX          (255)
 
 #define APICMD_EDRX_ACTTYPE_NOTUSE   (0) /* eDRX is not running */
 #define APICMD_EDRX_ACTTYPE_ECGSMIOT (1) /* EC-GSM-IoT (A/Gb mode) */
@@ -75,21 +61,10 @@
 #define APICMD_EDRX_ACTTYPE_WBS1     (4) /* E-UTRAN (WB-S1 mode) */
 #define APICMD_EDRX_ACTTYPE_NBS1     (5) /* E-UTRAN (NB-S1 mode) */
 
-#define APICMD_EDRX_CYC_512          (0)
-#define APICMD_EDRX_CYC_1024         (1)
 #define APICMD_EDRX_CYC_2048         (2)
 #define APICMD_EDRX_CYC_4096         (3)
-#define APICMD_EDRX_CYC_6144         (4)
 #define APICMD_EDRX_CYC_8192         (5)
-#define APICMD_EDRX_CYC_10240        (6)
-#define APICMD_EDRX_CYC_12288        (7)
-#define APICMD_EDRX_CYC_14336        (8)
 #define APICMD_EDRX_CYC_16384        (9)
-#define APICMD_EDRX_CYC_32768        (10)
-#define APICMD_EDRX_CYC_65536        (11)
-#define APICMD_EDRX_CYC_131072       (12)
-#define APICMD_EDRX_CYC_262144       (13)
-#define APICMD_EDRX_CYC_524288       (14)
 #define APICMD_EDRX_CYC_1048576      (15)
 
 #define APICMD_ENTERPIN_NEWPINCODE_UNUSE         (0)
@@ -132,9 +107,6 @@
 
 #define APICMD_PHONENO_LEN                   41
 
-#define APICMD_PSM_TIMER_MIN        (1)
-#define APICMD_PSM_TIMER_MAX        (31)
-
 #define APICMD_QUALITY_DISABLE  (0)
 #define APICMD_QUALITY_ENABLE   (1)
 #define APICMD_QUALITY_RSRP_MIN (-140)
@@ -144,39 +116,12 @@
 #define APICMD_QUALITY_SINR_MIN (-128)
 #define APICMD_QUALITY_SINR_MAX (40)
 
-#define APICMD_RAT_RES_OK            (0)
-#define APICMD_RAT_RES_ERR           (1)
-#define APICMD_RAT_RAT_DEFAULT       (1)
-#define APICMD_RAT_RAT_CATM          (2)
-#define APICMD_RAT_RAT_NBIOT         (3)
-#define APICMD_RAT_RAT_GSM           (4)
-#define APICMD_RAT_RAT_C2D           (5)
-#define APICMD_RAT_RAT_N2D           (6)
-#define APICMD_RAT_RAT_G2D           (7)
-#define APICMD_RAT_NOT_PERSIS        (0)
-#define APICMD_RAT_PERSIS            (1)
-#define APICMD_RAT_RAT_MODE_SINGLE   (0)
-#define APICMD_RAT_RAT_MODE_MULTIPLE (1)
-#define APICMD_RAT_SOURCE_NONE       (0)
-#define APICMD_RAT_SOURCE_HOST       (1)
-#define APICMD_RAT_SOURCE_LWM2M      (2)
-
-#define APICMD_SET_REPCELLINFO_INTERVAL_MIN  (1)
-#define APICMD_SET_REPCELLINFO_INTERVAL_MAX  (4233600)
-
 #define APICMD_SET_REP_EVT_DISABLE                          (0)
 #define APICMD_SET_REP_EVT_ENABLE                           (1)
 
 #define APICMD_SET_REP_EVT_LTIME                            (1 << 0)
 #define APICMD_SET_REP_EVT_SIMD                             (1 << 1)
 #define APICMD_SET_REP_EVT_SIMSTATE                         (1 << 2)
-#define APICMD_SET_REP_EVT_REGSTATE                         (1 << 3)
-#define APICMD_SET_REP_EVT_PSMSTATE                         (1 << 4)
-#define APICMD_SET_REP_EVT_DYNPSM                           (1 << 5)
-#define APICMD_SET_REP_EVT_DYNEDRX                          (1 << 6)
-#define APICMD_SET_REP_EVT_CONNPHASE                        (1 << 7)
-#define APICMD_SET_REP_EVT_ANTITAMPER                       (1 << 8)
-#define APICMD_SET_REP_EVT_MAX                              (1 << 15)
 
 #define APICMD_SET_REP_EVT_RES_OK                           (0)
 #define APICMD_SET_REP_EVT_RES_ERR                          (1)
@@ -184,12 +129,6 @@
 #define APICMD_REPORT_EVT_TYPE_LTIME                        (0)
 #define APICMD_REPORT_EVT_TYPE_SIMD                         (1)
 #define APICMD_REPORT_EVT_TYPE_SIMSTATE                     (2)
-#define APICMD_REPORT_EVT_TYPE_REGSTATE                     (3)
-#define APICMD_REPORT_EVT_TYPE_PSMSTATE                     (4)
-#define APICMD_REPORT_EVT_TYPE_DYNPSM                       (5)
-#define APICMD_REPORT_EVT_TYPE_DYNEDRX                      (6)
-#define APICMD_REPORT_EVT_TYPE_CONNPHASE                    (7)
-#define APICMD_REPORT_EVT_TYPE_ANTITAMPER                   (8)
 
 #define APICMD_REPORT_EVT_SIMD_REMOVAL                      (0)
 #define APICMD_REPORT_EVT_SIMD_INSERTION                    (1)
@@ -199,56 +138,14 @@
 #define APICMD_REPORT_EVT_SIMSTATE_PERSONALIZATION_FAILED   (2)
 #define APICMD_REPORT_EVT_SIMSTATE_ACTIVATION_COMPLETED     (3)
 
-#define APICMD_REPORT_EVT_ALERTU_TEMP                       (0)
-#define APICMD_REPORT_EVT_ALERTU_ANTIAMPER                  (1)
-
-#define APICMD_REP_PSMST_NOT_ACTIVE                         (0)
-#define APICMD_REP_PSMST_ACTIVE                             (1)
-#define APICMD_REP_PSMST_ACTIVE_AND_CAMPED                  (2)
-#define APICMD_REP_PSMST_CAMP_INTERRUPTED                   (3)
-
-#define APICMD_REP_CONNPHASE_START_SCAN                     (0)
-#define APICMD_REP_CONNPHASE_FAIL_SCAN                      (1)
-#define APICMD_REP_CONNPHASE_ENTER_CAMPED                   (2)
-#define APICMD_REP_CONNPHASE_CONNECTION_ESTABLISHMENT       (3)
-#define APICMD_REP_CONNPHASE_START_RESCAN                   (4)
-#define APICMD_REP_CONNPHASE_ENTER_CONNECTED                (5)
-#define APICMD_REP_CONNPHASE_NO_SUITABLE_CELL               (6)
-#define APICMD_REP_CONNPHASE_REG_ATTEMPT_FAILED             (7)
-#define APICMD_REP_CONNPHASE_NOT_AVAIL                      (99)
-
-#define APICMD_REP_CONPHASE_RAT_CATM                        (0)
-#define APICMD_REP_CONPHASE_RAT_NBIOT                       (1)
-#define APICMD_REP_CONPHASE_RAT_GSM                         (3)
-#define APICMD_REP_CONPHASE_RAT_NOT_AVAIL                   (99)
-
-#define APICMD_REP_CONPHASE_SCAN_MRU_ONLY                   (0)
-#define APICMD_REP_CONPHASE_SCAN_MRU_AND_FULL_SCAN          (1)
-#define APICMD_REP_CONPHASE_SCAN_MRU_AND_COUNTRY_SCAN       (2)
-#define APICMD_REP_CONPHASE_SCAN_MRU_AND_LS                 (3)
-#define APICMD_REP_CONPHASE_SCAN_MRU_NOT_AVAIL              (99)
-
-#define APICMD_REP_CONPHASE_SCAN_REASON_INIT_SCAN           (0)
-#define APICMD_REP_CONPHASE_SCAN_REASON_OUT_OF_COVERAGE     (1)
-#define APICMD_REP_CONPHASE_SCAN_REASON_HIGH_PRIORITY       (2)
-#define APICMD_REP_CONPHASE_SCAN_REASON_LIMITED_SERVICE     (3)
-#define APICMD_REP_CONPHASE_SCAN_REASON_COPS                (4)
-#define APICMD_REP_CONPHASE_SCAN_REASON_OTHER               (5)
-#define APICMD_REP_CONPHASE_SCAN_REASON_NOT_AVAIL           (99)
-
 #define APICMD_REPNETINFO_RES_OK                 (0)
 #define APICMD_REPNETINFO_RES_ERR                (1)
 
 #define APICMD_REPNETINFO_REPORT_ENABLE          (0)
 #define APICMD_REPNETINFO_REPORT_DISABLE         (1)
 
-#define APICMD_REPNETINFO_NWSTAT_ATCH            (0)
-#define APICMD_REPNETINFO_NWSTAT_DTCH            (1)
-
 #define APICMD_SET_REPQUALITY_DISABLE      (0)
 #define APICMD_SET_REPQUALITY_ENABLE       (1)
-#define APICMD_SET_REPQUALITY_INTERVAL_MIN (1)
-#define APICMD_SET_REPQUALITY_INTERVAL_MAX (4233600)
 
 #define APICMD_SETPINCODE_PINCODE_LEN  9
 
