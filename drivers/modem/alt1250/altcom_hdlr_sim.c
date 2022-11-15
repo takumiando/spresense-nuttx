@@ -247,18 +247,16 @@ int32_t altcom_getimsi_pkt_parse(FAR struct alt1250_dev_s *dev,
           FAR size_t *len = (FAR size_t *)arg[3];
 
           /* Is it enough length to include Null terminate?
-           * The length of APICMD_IMSI_LEN includes the
-           * null terminator.
+           * The length of LTE_IMSI_LEN includes the null terminator.
            */
 
-          if (*len < strnlen((FAR const char *)in->imsi,
-            APICMD_IMSI_LEN))
+          if (*len < strnlen((FAR const char *)in->imsi, LTE_IMSI_LEN))
             {
               return -ENOBUFS;
             }
         }
 
-      strncpy(imsi, (FAR const char *)in->imsi, APICMD_IMSI_LEN);
+      strncpy(imsi, (FAR const char *)in->imsi, LTE_IMSI_LEN);
     }
 
   return 0;
