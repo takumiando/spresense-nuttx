@@ -1803,6 +1803,11 @@ int altmdm_give_wlock(void)
   return cnt;
 }
 
+int altmdm_count_wlock(void)
+{
+  return g_altmdm_dev.wcounter;
+}
+
 uint32_t altmdm_get_reset_reason(void)
 {
   return get_reset_reason();
