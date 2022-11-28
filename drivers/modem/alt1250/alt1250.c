@@ -48,6 +48,16 @@
 #define rel_evtbufinst(inst, dev) unlock_evtbufinst(inst, dev)
 
 /****************************************************************************
+ * Private Types
+ ****************************************************************************/
+
+struct alt1250_res_s
+{
+  sem_t sem;
+  int code;
+};
+
+/****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
 
@@ -99,6 +109,8 @@ static struct pm_callback_s g_alt1250pmcb =
   .notify  = alt1250_pm_notify,
   .prepare = alt1250_pm_prepare,
 };
+
+static struct alt1250_res_s g_alt1250_res_s;
 #endif
 
 /****************************************************************************
@@ -568,6 +580,44 @@ parse_handler_t get_parsehdlr(uint16_t altcid, uint8_t altver)
 
   return ret;
 }
+
+#ifdef CONFIG_PM
+/****************************************************************************
+ * Name: alt1250_send_daemon_request
+ ****************************************************************************/
+
+static int alt1250_send_daemon_request(uint64_t bitmap)
+{
+  /* Set event bitmap */
+
+  write_evtbitmap(g_alt1250_dev, bitmap);
+
+  /* Send event for daemon */
+
+  pollnotify(g_alt1250_dev);
+
+  /* Waiting for daemon response */
+
+  nxsem_wait_uninterruptible(&g_alt1250_res_s.sem);
+
+  return g_alt1250_res_s.code;
+}
+
+/****************************************************************************
+ * Name: alt1250_receive_daemon_response
+ ****************************************************************************/
+
+static void alt1250_receive_daemon_response(FAR struct alt_power_s *req)
+{
+  /* Store daemon response code */
+
+  g_alt1250_res_s.code = req->resp;
+
+  /* Post request semaphore */
+
+  nxsem_post(&g_alt1250_res_s.sem);
+}
+#endif
 
 /****************************************************************************
  * Name: alt1250_power_control
@@ -1367,6 +1417,8 @@ FAR void *alt1250_register(FAR const char *devpath,
       kmm_free(priv);
       return NULL;
     }
+
+  nxsem_init(&g_alt1250_res_s.sem, 0, 0);
 #endif
 
   ret = register_driver(devpath, &g_alt1250fops, 0666, priv);

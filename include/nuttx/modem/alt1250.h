@@ -256,6 +256,7 @@
 struct alt_power_s
 {
   uint32_t cmdid;
+  int      resp;
 };
 
 typedef struct alt_container_s
