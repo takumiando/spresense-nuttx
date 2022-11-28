@@ -1507,12 +1507,35 @@ int altmdm_init(FAR struct spi_dev_s *spidev,
   g_altmdm_dev.txreq_size = 0;
   g_altmdm_dev.retry_mode = 0;
 
-  g_altmdm_dev.current_state = ALTMDM_STATE_POWEROFF;
-  g_altmdm_dev.vp = VP_NO_RESET;
-
   lower->irqattach(sready_isr);
 
-  next_state_poweroff(g_altmdm_dev.current_state);
+  if (altmdm_get_powersupply(lower))
+    {
+      /* When the ALT1250 is turned on during initialization,
+       * it means that the ALT1250 has returned from hibernation.
+       * After recovery, ALTMDM state is Sleep.
+       * And this function is supported only when the protocol
+       * version is PV4.
+       */
+
+      g_altmdm_dev.current_state = ALTMDM_STATE_SLEEP;
+      g_altmdm_dev.vp = VP_V4;
+      g_altmdm_dev.spidev = g_altmdm_dev.lower->poweron();
+      g_altmdm_dev.lower->set_mready(false);
+      g_altmdm_dev.lower->set_wakeup(false);
+      g_altmdm_dev.lower->irqenable(true);
+
+      altmdm_set_pm_event(EVENT_RETRYREQ, true);
+
+      next_state_sleep(g_altmdm_dev.current_state);
+    }
+  else
+    {
+      g_altmdm_dev.current_state = ALTMDM_STATE_POWEROFF;
+      g_altmdm_dev.vp = VP_NO_RESET;
+
+      next_state_poweroff(g_altmdm_dev.current_state);
+    }
 
   return 0;
 }
@@ -1807,6 +1830,18 @@ uint8_t altmdm_get_protoversion(void)
   nxsem_post(&g_altmdm_dev.lock_vp);
 
   return (uint8_t)vp;
+}
+
+int altmdm_set_pm_event(uint32_t event, bool enable)
+{
+  if (enable)
+    {
+      return altmdm_event_set(&g_altmdm_dev.event, event);
+    }
+  else
+    {
+      return altmdm_event_clear(&g_altmdm_dev.event, event);
+    }
 }
 
 #endif

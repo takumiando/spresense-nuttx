@@ -1379,6 +1379,13 @@ FAR void *alt1250_register(FAR const char *devpath,
 
   priv->rxthread_pid = -1;
 
+#ifdef CONFIG_PM
+  if (altmdm_get_powersupply(priv->lower))
+    {
+      priv->rxthread_pid = alt1250_start_rxthread(priv, false);
+    }
+#endif
+
   return (FAR void *)priv;
 }
 

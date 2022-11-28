@@ -253,4 +253,22 @@ uint32_t altmdm_get_reset_reason(void);
 
 uint8_t altmdm_get_protoversion(void);
 
+/****************************************************************************
+ * Name: altmdm_set_pm_event
+ *
+ * Description:
+ *   Set PM event flag for alt1250 receive thread..
+ *
+ * Input Parameters:
+ *   event    - Bitmap of the event to send/clear.
+ *   enable   - true: send, false: clear.
+ *
+ * Returned Value:
+ *   Returns 0 on success.
+ *   When an error occurs, a negative value is returned.
+ *
+ ****************************************************************************/
+
+int altmdm_set_pm_event(uint32_t event, bool enable);
+
 #endif  /* __DRIVERS_MODEM_ALT1250_ALTMDM_H__ */
