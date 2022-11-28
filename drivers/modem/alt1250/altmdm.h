@@ -33,6 +33,18 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
+#define EVENT_POWERON  (1 << 0)
+#define EVENT_POWEROFF (1 << 1)
+#define EVENT_RESET    (1 << 2)
+#define EVENT_WLOCK    (1 << 3)
+#define EVENT_TXREQ    (1 << 4)
+#define EVENT_RXREQ    (1 << 5)
+#define EVENT_TXSUSTO  (1 << 6)
+#define EVENT_DESTROY  (1 << 7)
+#define EVENT_SUSPEND  (1 << 8)
+#define EVENT_RESUME   (1 << 9)
+#define EVENT_RETRYREQ (1 << 10)
+
 #define ALTMDM_RETURN_RESET_V1  (-1)
 #define ALTMDM_RETURN_NOTREADY  (-2)
 #define ALTMDM_RETURN_CANCELED  (-3)

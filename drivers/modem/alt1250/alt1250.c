@@ -649,6 +649,7 @@ static int alt1250_power_control(FAR struct alt1250_dev_s *dev,
 
 #ifdef CONFIG_PM
       case LTE_CMDID_STOPAPI:
+      case LTE_CMDID_SUSPEND:
         alt1250_receive_daemon_response(req);
         break;
 #endif
@@ -1406,7 +1407,37 @@ static int alt1250_pm_prepare(struct pm_callback_s *cb, int domain,
 static void alt1250_pm_notify(struct pm_callback_s *cb, int domain,
                               enum pm_state_e pmstate)
 {
-  /* TODO: Implement Notify process */
+  bool power;
+
+  /* ALT1250's power management only supports BOARD_PM_APPS */
+
+  if ((domain == BOARD_PM_APPS) && (pmstate == PM_SLEEP))
+    {
+      power = altmdm_get_powersupply(g_alt1250_dev->lower);
+
+      if (power)
+        {
+          /* Set retry mode for SPI driver */
+
+          altmdm_set_pm_event(EVENT_RETRYREQ, true);
+
+          /* Send suspend request to daemon */
+
+          alt1250_send_daemon_request(ALT1250_EVTBIT_SUSPEND);
+
+          /* Set suspend mode for SPI driver */
+
+          altmdm_set_pm_event(EVENT_SUSPEND, true);
+
+          /* Waiting for entering sleep state */
+
+          nxsem_wait_uninterruptible(&g_alt1250_dev->rxthread_sem);
+
+          /* Enable LTE hibernation mode for wakeup from LTE */
+
+          g_alt1250_dev->lower->hiber_mode(true);
+        }
+    }
 }
 #endif
 
