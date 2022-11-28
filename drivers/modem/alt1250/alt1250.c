@@ -25,6 +25,7 @@
 #include <nuttx/config.h>
 
 #include <nuttx/kmalloc.h>
+#include <nuttx/kthread.h>
 #include <nuttx/fs/fs.h>
 #include <poll.h>
 #include <errno.h>
@@ -89,6 +90,8 @@ static const struct file_operations g_alt1250fops =
 };
 static uint8_t g_recvbuff[ALTCOM_RX_PKT_SIZE_MAX];
 static uint8_t g_sendbuff[ALTCOM_PKT_SIZE_MAX];
+
+static struct alt1250_dev_s *g_alt1250_dev;
 
 #ifdef CONFIG_PM
 static struct pm_callback_s g_alt1250pmcb =
@@ -751,10 +754,10 @@ static int exchange_selectcontainer(FAR struct alt1250_dev_s *dev,
  * Name: altcom_recvthread
  ****************************************************************************/
 
-static void altcom_recvthread(FAR void *arg)
+static int altcom_recvthread(int argc, FAR char *argv[])
 {
   int ret;
-  FAR struct alt1250_dev_s *dev = (FAR struct alt1250_dev_s *)arg;
+  FAR struct alt1250_dev_s *dev = g_alt1250_dev;
   bool is_running = true;
   FAR struct alt_container_s *head;
   FAR struct alt_container_s *container;
@@ -1007,9 +1010,53 @@ static void altcom_recvthread(FAR void *arg)
       recvedlen = 0;
     }
 
+  nxsem_post(&dev->rxthread_sem);
+
   m_info("recv thread end\n");
 
-  pthread_exit(0);
+  return 0;
+}
+
+/****************************************************************************
+ * Name: alt1250_start_rxthread
+ ****************************************************************************/
+
+static int alt1250_start_rxthread(FAR struct alt1250_dev_s *dev,
+                                  bool senddisable)
+{
+  int ret = OK;
+
+  nxsem_init(&dev->waitlist.lock, 0, 1);
+  nxsem_init(&dev->replylist.lock, 0, 1);
+  nxsem_init(&dev->evtmaplock, 0, 1);
+  nxsem_init(&dev->pfdlock, 0, 1);
+  nxsem_init(&dev->senddisablelock, 0, 1);
+  nxsem_init(&dev->select_inst.stat_lock, 0, 1);
+
+  sq_init(&dev->waitlist.queue);
+  sq_init(&dev->replylist.queue);
+
+  dev->senddisable = senddisable;
+
+  ret = kthread_create("altcom_recvthread",
+                       SCHED_PRIORITY_DEFAULT,
+                       CONFIG_DEFAULT_TASK_STACKSIZE,
+                       altcom_recvthread,
+                       (FAR char * const *)NULL);
+
+  if (ret < 0)
+    {
+      m_err("kthread create failed: %d\n", errno);
+
+      nxsem_destroy(&dev->waitlist.lock);
+      nxsem_destroy(&dev->replylist.lock);
+      nxsem_destroy(&dev->evtmaplock);
+      nxsem_destroy(&dev->pfdlock);
+      nxsem_destroy(&dev->senddisablelock);
+      nxsem_destroy(&dev->select_inst.stat_lock);
+    }
+
+  return ret;
 }
 
 /****************************************************************************
@@ -1034,7 +1081,8 @@ static int alt1250_open(FAR struct file *filep)
 
   if (dev->crefs > 0)
     {
-      ret = -EPERM;
+      nxsem_post(&dev->refslock);
+      return -EPERM;
     }
 
   /* Increment the count of open references on the driver */
@@ -1043,43 +1091,17 @@ static int alt1250_open(FAR struct file *filep)
 
   nxsem_post(&dev->refslock);
 
-  if (ret == OK)
+  if (dev->rxthread_pid < 0)
     {
-      nxsem_init(&dev->waitlist.lock, 0, 1);
-      nxsem_init(&dev->replylist.lock, 0, 1);
-      nxsem_init(&dev->evtmaplock, 0, 1);
-      nxsem_init(&dev->pfdlock, 0, 1);
-      nxsem_init(&dev->senddisablelock, 0, 1);
-      nxsem_init(&dev->select_inst.stat_lock, 0, 1);
+      dev->rxthread_pid = alt1250_start_rxthread(dev, true);
+    }
 
-      sq_init(&dev->waitlist.queue);
-      sq_init(&dev->replylist.queue);
-
-      dev->senddisable = true;
-
-      ret = pthread_create(&dev->recvthread, NULL,
-        (pthread_startroutine_t)altcom_recvthread,
-        (pthread_addr_t)dev);
-      if (ret < 0)
-        {
-          m_err("thread create failed: %d\n", errno);
-          ret = -errno;
-
-          nxsem_destroy(&dev->waitlist.lock);
-          nxsem_destroy(&dev->replylist.lock);
-          nxsem_destroy(&dev->evtmaplock);
-          nxsem_destroy(&dev->pfdlock);
-          nxsem_destroy(&dev->senddisablelock);
-          nxsem_destroy(&dev->select_inst.stat_lock);
-
-          nxsem_wait_uninterruptible(&dev->refslock);
-          dev->crefs--;
-          nxsem_post(&dev->refslock);
-        }
-      else
-        {
-          pthread_setname_np(dev->recvthread, "altcom_recvthread");
-        }
+  if (dev->rxthread_pid < 0)
+    {
+      ret = dev->rxthread_pid;
+      nxsem_wait_uninterruptible(&dev->refslock);
+      dev->crefs--;
+      nxsem_post(&dev->refslock);
     }
 
   return ret;
@@ -1093,7 +1115,6 @@ static int alt1250_close(FAR struct file *filep)
 {
   FAR struct inode *inode;
   FAR struct alt1250_dev_s *dev;
-  int ret = OK;
 
   /* Get our private data structure */
 
@@ -1107,31 +1128,28 @@ static int alt1250_close(FAR struct file *filep)
 
   if (dev->crefs == 0)
     {
-      ret = -EPERM;
+      nxsem_post(&dev->refslock);
+      return -EPERM;
     }
-  else
-    {
-      /* Decrement the count of open references on the driver */
 
-      dev->crefs--;
-    }
+  /* Decrement the count of open references on the driver */
+
+  dev->crefs--;
 
   nxsem_post(&dev->refslock);
 
-  if (ret == OK)
-    {
-      nxsem_destroy(&dev->waitlist.lock);
-      nxsem_destroy(&dev->replylist.lock);
-      nxsem_destroy(&dev->evtmaplock);
-      nxsem_destroy(&dev->pfdlock);
-      nxsem_destroy(&dev->senddisablelock);
-      nxsem_destroy(&dev->select_inst.stat_lock);
+  nxsem_destroy(&dev->waitlist.lock);
+  nxsem_destroy(&dev->replylist.lock);
+  nxsem_destroy(&dev->evtmaplock);
+  nxsem_destroy(&dev->pfdlock);
+  nxsem_destroy(&dev->senddisablelock);
+  nxsem_destroy(&dev->select_inst.stat_lock);
 
-      altmdm_fin();
-      pthread_join(dev->recvthread, NULL);
-    }
+  altmdm_fin();
+  dev->rxthread_pid = -1;
+  nxsem_wait_uninterruptible(&dev->rxthread_sem);
 
-  return ret;
+  return OK;
 }
 
 /****************************************************************************
@@ -1336,6 +1354,10 @@ FAR void *alt1250_register(FAR const char *devpath,
 
   nxsem_init(&priv->refslock, 0, 1);
 
+  nxsem_init(&priv->rxthread_sem, 0, 0);
+
+  g_alt1250_dev = priv;
+
 #ifdef CONFIG_PM
   ret = pm_register(&g_alt1250pmcb);
 
@@ -1354,6 +1376,8 @@ FAR void *alt1250_register(FAR const char *devpath,
       kmm_free(priv);
       return NULL;
     }
+
+  priv->rxthread_pid = -1;
 
   return (FAR void *)priv;
 }

@@ -338,7 +338,8 @@ struct alt1250_dev_s
   sem_t evtmaplock;
   sem_t pfdlock;
   FAR struct pollfd *pfd;
-  pthread_t recvthread;
+  int rxthread_pid;
+  sem_t rxthread_sem;
   FAR struct alt_evtbuffer_s *evtbuff;
   uint32_t discardcnt;
   sem_t senddisablelock;
