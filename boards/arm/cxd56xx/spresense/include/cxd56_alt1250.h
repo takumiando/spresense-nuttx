@@ -99,6 +99,16 @@ void board_alt1250_poweroff(void);
 bool board_alt1250_powerstatus(void);
 
 /****************************************************************************
+ * Name: board_alt1250_powerkeep
+ *
+ * Description:
+ *   Set Modem power keep mode when turning off the board.
+ *
+ ****************************************************************************/
+
+int board_alt1250_powerkeep(bool enable);
+
+/****************************************************************************
  * Name: board_alt1250_reset
  *
  * Description:

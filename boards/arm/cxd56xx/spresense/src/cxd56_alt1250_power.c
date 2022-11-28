@@ -97,6 +97,26 @@ bool board_alt1250_powerstatus(void)
 }
 
 /****************************************************************************
+ * Name: board_alt1250_powerkeep
+ *
+ * Description:
+ *   Set Modem power keep mode when turning off the board.
+ *
+ ****************************************************************************/
+
+int board_alt1250_powerkeep(bool enable)
+{
+  if (enable)
+    {
+      return board_unset_reset_gpo(POWER_LTE);
+    }
+  else
+    {
+      return board_set_reset_gpo(POWER_LTE);
+    }
+}
+
+/****************************************************************************
  * Name: board_alt1250_timeout
  *
  * Description:
