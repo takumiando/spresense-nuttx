@@ -654,6 +654,10 @@ static int alt1250_power_control(FAR struct alt1250_dev_s *dev,
         break;
 #endif
 
+      case LTE_CMDID_RETRYDISABLE:
+        ret = altmdm_set_pm_event(EVENT_RETRYREQ, false);
+        break;
+
       default:
         ret = -EINVAL;
         break;
