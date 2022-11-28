@@ -84,6 +84,19 @@ void board_alt1250_poweroff(void)
 }
 
 /****************************************************************************
+ * Name: board_alt1250_powerstatus
+ *
+ * Description:
+ *   Get the power status for the Altair modem device on the board.
+ *
+ ****************************************************************************/
+
+bool board_alt1250_powerstatus(void)
+{
+  return board_power_monitor(POWER_LTE);
+}
+
+/****************************************************************************
  * Name: board_alt1250_timeout
  *
  * Description:
