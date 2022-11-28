@@ -154,6 +154,7 @@
 #define LTE_CMDID_STOPAPI                        _CMDGRP_NORMAL(0x3b)
 #define LTE_CMDID_SUSPEND                        _CMDGRP_NORMAL(0x3c)
 #define LTE_CMDID_RETRYDISABLE                   _CMDGRP_POWER(0x3d)
+#define LTE_CMDID_GET_POWER_STAT                 _CMDGRP_POWER(0x3e)
 
 #define LTE_CMDID_ACCEPT                         _CMDGRP_NORMAL(0x50)
 #define LTE_CMDID_BIND                           _CMDGRP_NORMAL(0x51)

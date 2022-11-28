@@ -658,6 +658,10 @@ static int alt1250_power_control(FAR struct alt1250_dev_s *dev,
         ret = altmdm_set_pm_event(EVENT_RETRYREQ, false);
         break;
 
+      case LTE_CMDID_GET_POWER_STAT:
+        ret = altmdm_get_powersupply(dev->lower);
+        break;
+
       default:
         ret = -EINVAL;
         break;
