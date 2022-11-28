@@ -186,6 +186,22 @@ int altmdm_poweron(void);
 int altmdm_poweroff(void);
 
 /****************************************************************************
+ * Name: altmdm_get_powersupply
+ *
+ * Description:
+ *   Get the power supply status of the ALT1250.
+ *
+ * Input Parameters:
+ *   Lower driver context
+ *
+ * Returned Value:
+ *   Returns true on turned on, false is turned off.
+ *
+ ****************************************************************************/
+
+bool altmdm_get_powersupply(FAR const struct alt1250_lower_s *lower);
+
+/****************************************************************************
  * Name: altmdm_reset
  *
  * Description:

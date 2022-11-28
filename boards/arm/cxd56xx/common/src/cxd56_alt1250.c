@@ -79,6 +79,7 @@
 
 static struct spi_dev_s *alt1250_poweron(void);
 static void alt1250_poweroff(void);
+static bool alt1250_powerstatus(void);
 static void alt1250_reset(void);
 static void alt1250_irqattach(xcpt_t handler);
 static void alt1250_irqenable(bool enable);
@@ -95,6 +96,7 @@ static const struct alt1250_lower_s g_alt1250_lower =
 {
   .poweron      = alt1250_poweron,
   .poweroff     = alt1250_poweroff,
+  .powerstatus  = alt1250_powerstatus,
   .reset        = alt1250_reset,
   .irqattach    = alt1250_irqattach,
   .irqenable    = alt1250_irqenable,
@@ -290,6 +292,19 @@ static void alt1250_poweroff(void)
   /* power off Altair modem device */
 
   board_alt1250_poweroff();
+}
+
+/****************************************************************************
+ * Name: alt1250_powerstatus
+ *
+ * Description:
+ *   Get the power status for the Altair modem device on the board.
+ *
+ ****************************************************************************/
+
+static bool alt1250_powerstatus(void)
+{
+  return board_alt1250_powerstatus();
 }
 
 /****************************************************************************

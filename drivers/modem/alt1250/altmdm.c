@@ -1638,6 +1638,17 @@ int altmdm_poweroff(void)
   return ret;
 }
 
+bool altmdm_get_powersupply(FAR const struct alt1250_lower_s *lower)
+{
+  if (!lower || !lower->powerstatus)
+    {
+      m_err("Lower driver not registered.\n");
+      return false;
+    }
+
+  return lower->powerstatus();
+}
+
 int altmdm_reset(void)
 {
   nxsem_wait_uninterruptible(&g_altmdm_dev.lock_evt);
