@@ -67,24 +67,6 @@ static sem_t g_wd_wait;
 
 void board_alt1250_poweron(void)
 {
-  /* Power on altair modem device */
-
-  cxd56_gpio_config(ALT1250_LTE_POWER_BUTTON, false);
-  cxd56_gpio_write(ALT1250_LTE_POWER_BUTTON, false);
-
-  cxd56_gpio_config(ALT1250_SHUTDOWN, false);
-
-  /* Workaround: Shutdown pin set to low before power on */
-
-  cxd56_gpio_write(ALT1250_SHUTDOWN, false);
-  nxsig_usleep(POWERON_DELAY_USEC);
-
-  cxd56_gpio_write(ALT1250_SHUTDOWN, true);
-
-  /* Workaround: Power button pin set to high before power on */
-
-  cxd56_gpio_write(ALT1250_LTE_POWER_BUTTON, true);
-
   board_power_control(POWER_LTE, true);
 }
 
@@ -98,12 +80,7 @@ void board_alt1250_poweron(void)
 
 void board_alt1250_poweroff(void)
 {
-  /* Power off Altair modem device */
-
   board_power_control(POWER_LTE, false);
-
-  cxd56_gpio_write(ALT1250_SHUTDOWN, false);
-  cxd56_gpio_write(ALT1250_LTE_POWER_BUTTON, false);
 }
 
 /****************************************************************************
@@ -136,7 +113,7 @@ void board_alt1250_reset(void)
 
   /* Reset Altair modem device */
 
-  cxd56_gpio_write(ALT1250_SHUTDOWN, false);
+  board_alt1250_poweroff();
 
   /* ALT1250_SHUTDOWN should be low in the range 101usec to 100msec */
 
@@ -147,7 +124,7 @@ void board_alt1250_reset(void)
 
   nxsem_wait_uninterruptible(&g_wd_wait);
 
-  cxd56_gpio_write(ALT1250_SHUTDOWN, true);
+  board_alt1250_poweron();
 
   nxsem_destroy(&g_wd_wait);
 }
