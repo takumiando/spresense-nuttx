@@ -306,6 +306,7 @@ struct alt1250_lower_s
   FAR struct spi_dev_s * (*poweron)(void);
   void (*poweroff)(void);
   bool (*powerstatus)(void);
+  int  (*hiber_mode)(bool);
   void (*reset)(void);
   void (*irqattach)(xcpt_t handler);
   void (*irqenable)(bool enable);
