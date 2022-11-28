@@ -59,6 +59,7 @@
 
 #define ALT1250_EVTBIT_RESET (1ULL << 63)
 #define ALT1250_EVTBIT_REPLY (1ULL << 62)
+#define ALT1250_EVTBIT_STOPAPI (1ULL << 61)
 
 /* Number of sockets */
 

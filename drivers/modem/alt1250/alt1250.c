@@ -29,6 +29,7 @@
 #include <nuttx/fs/fs.h>
 #include <poll.h>
 #include <errno.h>
+#include <arch/board/board.h>
 #include <nuttx/wireless/lte/lte_ioctl.h>
 #include <nuttx/modem/alt1250.h>
 #include <nuttx/power/pm.h>
@@ -645,6 +646,12 @@ static int alt1250_power_control(FAR struct alt1250_dev_s *dev,
       case LTE_CMDID_GIVEWLOCK:
         ret = altmdm_give_wlock();
         break;
+
+#ifdef CONFIG_PM
+      case LTE_CMDID_STOPAPI:
+        alt1250_receive_daemon_response(req);
+        break;
+#endif
 
       default:
         ret = -EINVAL;
@@ -1356,16 +1363,40 @@ errout:
 static int alt1250_pm_prepare(struct pm_callback_s *cb, int domain,
                               enum pm_state_e pmstate)
 {
+  int  ret   = OK;
+  bool power = false;
+
+  /* ALT1250's power management only support BOARD_PM_APPS */
+
+  if (domain != BOARD_PM_APPS)
+    {
+      return OK;
+    }
+
   if (pmstate == PM_SLEEP)
     {
-      /* TODO: Implement Prepare process */
+      power = altmdm_get_powersupply(g_alt1250_dev->lower);
 
-      return OK;
+      if (!power)
+        {
+          /* If the modem doesn't turned on, system can enter sleep */
+
+          return OK;
+        }
+
+      ret = alt1250_send_daemon_request(ALT1250_EVTBIT_STOPAPI);
+
+      if (ret)
+        {
+          return ERROR;
+        }
+      else
+        {
+          return OK;
+        }
     }
-  else
-    {
-      return OK;
-    }
+
+  return ret;
 }
 
 /****************************************************************************
