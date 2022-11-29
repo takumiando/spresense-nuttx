@@ -109,74 +109,6 @@ typedef struct parse_inst_s
 
 static uint16_t g_set_repevt = 0;
 
-static uint8_t g_edrx_acttype_table[] =
-{
-  LTE_EDRX_ACTTYPE_NOTUSE,
-  LTE_EDRX_ACTTYPE_ECGSMIOT,
-  LTE_EDRX_ACTTYPE_GSM,
-  LTE_EDRX_ACTTYPE_IU,
-  LTE_EDRX_ACTTYPE_WBS1,
-  LTE_EDRX_ACTTYPE_NBS1
-};
-
-static const uint8_t g_edrx_cycle_wbs1_table[] =
-{
-  LTE_EDRX_CYC_512,
-  LTE_EDRX_CYC_1024,
-  LTE_EDRX_CYC_2048,
-  LTE_EDRX_CYC_4096,
-  LTE_EDRX_CYC_6144,
-  LTE_EDRX_CYC_8192,
-  LTE_EDRX_CYC_10240,
-  LTE_EDRX_CYC_12288,
-  LTE_EDRX_CYC_14336,
-  LTE_EDRX_CYC_16384,
-  LTE_EDRX_CYC_32768,
-  LTE_EDRX_CYC_65536,
-  LTE_EDRX_CYC_131072,
-  LTE_EDRX_CYC_262144,
-};
-
-static const uint8_t g_edrx_cycle_nbs1_table[] =
-{
-  ALTCOMBS_EDRX_INVALID,
-  ALTCOMBS_EDRX_INVALID,
-  LTE_EDRX_CYC_2048,
-  LTE_EDRX_CYC_4096,
-  ALTCOMBS_EDRX_INVALID,
-  LTE_EDRX_CYC_8192,
-  ALTCOMBS_EDRX_INVALID,
-  ALTCOMBS_EDRX_INVALID,
-  ALTCOMBS_EDRX_INVALID,
-  LTE_EDRX_CYC_16384,
-  LTE_EDRX_CYC_32768,
-  LTE_EDRX_CYC_65536,
-  LTE_EDRX_CYC_131072,
-  LTE_EDRX_CYC_262144,
-  LTE_EDRX_CYC_524288,
-  LTE_EDRX_CYC_1048576,
-};
-
-static const uint8_t g_edrx_ptw_wbs1_table[] =
-{
-  LTE_EDRX_PTW_128,
-  LTE_EDRX_PTW_256,
-  LTE_EDRX_PTW_384,
-  LTE_EDRX_PTW_512,
-  LTE_EDRX_PTW_640,
-  LTE_EDRX_PTW_768,
-  LTE_EDRX_PTW_896,
-  LTE_EDRX_PTW_1024,
-  LTE_EDRX_PTW_1152,
-  LTE_EDRX_PTW_1280,
-  LTE_EDRX_PTW_1408,
-  LTE_EDRX_PTW_1536,
-  LTE_EDRX_PTW_1664,
-  LTE_EDRX_PTW_1792,
-  LTE_EDRX_PTW_1920,
-  LTE_EDRX_PTW_2048,
-};
-
 static const uint8_t g_edrx_ptw_nbs1_table[] =
 {
   LTE_EDRX_PTW_256,
@@ -898,33 +830,43 @@ int32_t altcombs_convert_api_edrx_value(lte_edrx_setting_t *api_edrx,
       return -EINVAL;
     }
 
-  if (api_edrx->enable < LTE_DISABLE ||
-      api_edrx->enable > LTE_ENABLE)
-    {
-      m_err("Invalid enable :%d\n", api_edrx->enable);
-      return -EINVAL;
-    }
-
   /* act_type check for version V4 or later */
 
   if (altver == ALTCOM_VER1)
     {
-      if (api_edrx->act_type != LTE_EDRX_ACTTYPE_WBS1 &&
-          api_edrx->act_type != LTE_EDRX_ACTTYPE_NOTUSE)
+      if (api_edrx->act_type == LTE_EDRX_ACTTYPE_WBS1)
+        {
+          cmd_edrx->acttype = APICMD_EDRX_ACTTYPE_WBS1;
+        }
+      else if (api_edrx->act_type == LTE_EDRX_ACTTYPE_NOTUSE)
+        {
+          cmd_edrx->acttype = APICMD_EDRX_ACTTYPE_NOTUSE;
+        }
+       else
         {
           m_err("Operation is not allowed[act_type : %d].\n",
-                      api_edrx->act_type);
+                api_edrx->act_type);
           return -EPERM;
         }
     }
   else if (altver == ALTCOM_VER4)
     {
-      if (api_edrx->act_type != LTE_EDRX_ACTTYPE_WBS1 &&
-          api_edrx->act_type != LTE_EDRX_ACTTYPE_NBS1 &&
-          api_edrx->act_type != LTE_EDRX_ACTTYPE_NOTUSE)
+      if (api_edrx->act_type == LTE_EDRX_ACTTYPE_WBS1)
+        {
+          cmd_edrx->acttype = APICMD_EDRX_ACTTYPE_WBS1;
+        }
+      else if (api_edrx->act_type == LTE_EDRX_ACTTYPE_NBS1)
+        {
+          cmd_edrx->acttype = APICMD_EDRX_ACTTYPE_NBS1;
+        }
+      else if (api_edrx->act_type == LTE_EDRX_ACTTYPE_NOTUSE)
+        {
+          cmd_edrx->acttype = APICMD_EDRX_ACTTYPE_NOTUSE;
+        }
+      else
         {
           m_err("Operation is not allowed[act_type : %d].\n",
-                          api_edrx->act_type);
+                api_edrx->act_type);
           return -EPERM;
         }
     }
@@ -933,51 +875,27 @@ int32_t altcombs_convert_api_edrx_value(lte_edrx_setting_t *api_edrx,
       return -ENOSYS;
     }
 
-  table_size = ARRAY_SZ(g_edrx_acttype_table);
-  for (i = 0; i < table_size; i++)
-    {
-      if (api_edrx->act_type == g_edrx_acttype_table[i])
-        {
-          cmd_edrx->acttype = (uint8_t)i;
-          break;
-        }
-    }
-
-  if (LTE_ENABLE == api_edrx->enable)
+  if (api_edrx->enable)
     {
       cmd_edrx->enable = LTE_ENABLE;
 
       if (APICMD_EDRX_ACTTYPE_WBS1 == cmd_edrx->acttype)
         {
-          table_size = ARRAY_SZ(g_edrx_cycle_wbs1_table);
-
-          for (i = 0; i < table_size; i++)
+          if (api_edrx->edrx_cycle <= LTE_EDRX_CYC_262144)
             {
-              if (api_edrx->edrx_cycle == g_edrx_cycle_wbs1_table[i])
-                {
-                  cmd_edrx->edrx_cycle = (uint8_t)i;
-                  break;
-                }
+              cmd_edrx->edrx_cycle = api_edrx->edrx_cycle;
             }
-
-          if (i == table_size)
+          else
             {
               m_err("Invalid cycle :%ld\n", api_edrx->edrx_cycle);
               return -EINVAL;
             }
 
-          table_size = ARRAY_SZ(g_edrx_ptw_wbs1_table);
-
-          for (i = 0; i < table_size; i++)
+          if (api_edrx->ptw_val <= LTE_EDRX_PTW_2048)
             {
-              if (api_edrx->ptw_val == g_edrx_ptw_wbs1_table[i])
-                {
-                  cmd_edrx->ptw_val = (uint8_t)i;
-                  break;
-                }
+              cmd_edrx->ptw_val = api_edrx->ptw_val;
             }
-
-          if (i == table_size)
+          else
             {
               m_err("Invalid PTW :%ld\n", api_edrx->ptw_val);
               return -EINVAL;
@@ -985,18 +903,15 @@ int32_t altcombs_convert_api_edrx_value(lte_edrx_setting_t *api_edrx,
         }
       else if (APICMD_EDRX_ACTTYPE_NBS1 == cmd_edrx->acttype)
         {
-          table_size = ARRAY_SZ(g_edrx_cycle_nbs1_table);
-
-          for (i = 0; i < table_size; i++)
+          if (api_edrx->edrx_cycle <= LTE_EDRX_CYC_1048576 &&
+              (api_edrx->edrx_cycle == LTE_EDRX_CYC_2048 ||
+               api_edrx->edrx_cycle == LTE_EDRX_CYC_4096 ||
+               api_edrx->edrx_cycle == LTE_EDRX_CYC_8192 ||
+               api_edrx->edrx_cycle >= LTE_EDRX_CYC_16384))
             {
-              if (api_edrx->edrx_cycle == g_edrx_cycle_nbs1_table[i])
-                {
-                  cmd_edrx->edrx_cycle = (uint8_t)i;
-                  break;
-                }
+              cmd_edrx->edrx_cycle = api_edrx->edrx_cycle;
             }
-
-          if (i == table_size)
+          else
             {
               m_err("Invalid cycle :%ld\n", api_edrx->edrx_cycle);
               return -EINVAL;
@@ -1329,74 +1244,81 @@ static int32_t altcombs_convert_apicmd_edrx_value(
       return -EINVAL;
     }
 
-  if (LTE_DISABLE > cmd_edrx->enable ||
-      LTE_ENABLE < cmd_edrx->enable)
+  if (cmd_edrx->enable == LTE_ENABLE)
     {
-      m_err("Invalid enable :%d\n", cmd_edrx->enable);
-      return -EINVAL;
-    }
+      api_edrx->enable = LTE_ENABLE;
 
-  if (LTE_ENABLE == cmd_edrx->enable)
-    {
-      if (APICMD_EDRX_ACTTYPE_NOTUSE != cmd_edrx->acttype &&
-          APICMD_EDRX_ACTTYPE_WBS1   != cmd_edrx->acttype &&
-          APICMD_EDRX_ACTTYPE_NBS1   != cmd_edrx->acttype)
+      if (cmd_edrx->acttype == APICMD_EDRX_ACTTYPE_NOTUSE)
+        {
+          api_edrx->act_type = LTE_EDRX_ACTTYPE_NOTUSE;
+        }
+      else if (cmd_edrx->acttype == APICMD_EDRX_ACTTYPE_WBS1)
+        {
+          api_edrx->act_type = LTE_EDRX_ACTTYPE_WBS1;
+          if (cmd_edrx->edrx_cycle >= ALTCOMBS_EDRX_CYCLE_WBS1_MIN &&
+              cmd_edrx->edrx_cycle <= ALTCOMBS_EDRX_CYCLE_WBS1_MAX)
+            {
+              api_edrx->edrx_cycle = cmd_edrx->edrx_cycle;
+            }
+          else
+            {
+              m_err("Invalid cycle :%d\n", cmd_edrx->edrx_cycle);
+              return -EINVAL;
+            }
+
+          if (cmd_edrx->ptw_val >= ALTCOMBS_EDRX_PTW_WBS1_MIN &&
+              cmd_edrx->ptw_val <= ALTCOMBS_EDRX_PTW_WBS1_MAX)
+            {
+              api_edrx->ptw_val = cmd_edrx->ptw_val;
+            }
+          else
+            {
+              m_err("Invalid PTW :%d\n", cmd_edrx->ptw_val);
+              return -EINVAL;
+            }
+        }
+      else if (cmd_edrx->acttype == APICMD_EDRX_ACTTYPE_NBS1)
+        {
+          api_edrx->act_type = LTE_EDRX_ACTTYPE_NBS1;
+          if (cmd_edrx->edrx_cycle <= APICMD_EDRX_CYC_1048576 &&
+              (cmd_edrx->edrx_cycle == APICMD_EDRX_CYC_2048 ||
+               cmd_edrx->edrx_cycle == APICMD_EDRX_CYC_4096 ||
+               cmd_edrx->edrx_cycle == APICMD_EDRX_CYC_8192 ||
+               cmd_edrx->edrx_cycle >= APICMD_EDRX_CYC_16384))
+            {
+              api_edrx->edrx_cycle = cmd_edrx->edrx_cycle;
+            }
+          else
+            {
+              m_err("Invalid cycle :%d\n", cmd_edrx->edrx_cycle);
+              return -EINVAL;
+            }
+
+          if (cmd_edrx->ptw_val >= ALTCOMBS_EDRX_PTW_NBS1_MIN &&
+              cmd_edrx->ptw_val <= ALTCOMBS_EDRX_PTW_NBS1_MAX)
+            {
+              api_edrx->ptw_val = g_edrx_ptw_nbs1_table[cmd_edrx->ptw_val];
+            }
+          else
+            {
+              m_err("Invalid PTW :%d\n", cmd_edrx->ptw_val);
+              return -EINVAL;
+            }
+        }
+      else
         {
           m_err("Invalid acttype :%d\n", cmd_edrx->acttype);
           return -EINVAL;
         }
-
-      if (LTE_EDRX_ACTTYPE_WBS1 == cmd_edrx->acttype)
-        {
-          if (cmd_edrx->edrx_cycle < ALTCOMBS_EDRX_CYCLE_WBS1_MIN ||
-              cmd_edrx->edrx_cycle > ALTCOMBS_EDRX_CYCLE_WBS1_MAX)
-            {
-              m_err("Invalid cycle :%d\n", cmd_edrx->edrx_cycle);
-              return -EINVAL;
-            }
-
-          if (ALTCOMBS_EDRX_PTW_WBS1_MIN > cmd_edrx->ptw_val ||
-              ALTCOMBS_EDRX_PTW_WBS1_MAX < cmd_edrx->ptw_val)
-            {
-              m_err("Invalid PTW :%d\n", cmd_edrx->ptw_val);
-              return -EINVAL;
-            }
-        }
-      else if (LTE_EDRX_ACTTYPE_NBS1 == cmd_edrx->acttype)
-        {
-          if (cmd_edrx->edrx_cycle < ALTCOMBS_EDRX_CYCLE_NBS1_MIN ||
-              cmd_edrx->edrx_cycle > ALTCOMBS_EDRX_CYCLE_NBS1_MAX)
-            {
-              m_err("Invalid cycle :%d\n", cmd_edrx->edrx_cycle);
-              return -EINVAL;
-            }
-
-          if (cmd_edrx->ptw_val < ALTCOMBS_EDRX_PTW_NBS1_MIN ||
-              cmd_edrx->ptw_val > ALTCOMBS_EDRX_PTW_NBS1_MAX)
-            {
-              m_err("Invalid PTW :%d\n", cmd_edrx->ptw_val);
-              return -EINVAL;
-            }
-        }
-
-      api_edrx->enable = LTE_ENABLE;
-      api_edrx->act_type = g_edrx_acttype_table[cmd_edrx->acttype];
-      if (APICMD_EDRX_ACTTYPE_WBS1 == cmd_edrx->acttype)
-        {
-          api_edrx->edrx_cycle =
-            g_edrx_cycle_wbs1_table[cmd_edrx->edrx_cycle];
-          api_edrx->ptw_val = g_edrx_ptw_wbs1_table[cmd_edrx->ptw_val];
-        }
-      else if (APICMD_EDRX_ACTTYPE_NBS1 == cmd_edrx->acttype)
-        {
-          api_edrx->edrx_cycle =
-            g_edrx_cycle_nbs1_table[cmd_edrx->edrx_cycle];
-          api_edrx->ptw_val = g_edrx_ptw_nbs1_table[cmd_edrx->ptw_val];
-        }
+    }
+  else if (cmd_edrx->enable == LTE_DISABLE)
+    {
+      api_edrx->enable = LTE_DISABLE;
     }
   else
     {
-      api_edrx->enable = LTE_DISABLE;
+      m_err("Invalid enable :%d\n", cmd_edrx->enable);
+      return -EINVAL;
     }
 
   return 0;
