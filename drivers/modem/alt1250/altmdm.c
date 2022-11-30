@@ -509,7 +509,7 @@ static int next_state_sleep(altmdm_state_t state)
 
   if ((evt & EVENT_SUSPEND) != 0)
     {
-      set_return_code(ALTMDM_RETURN_EXIT);
+      set_return_code(ALTMDM_RETURN_SUSPENDED);
       return 1;
     }
 

@@ -51,6 +51,7 @@
 #define ALTMDM_RETURN_RESET_V4  (-4)
 #define ALTMDM_RETURN_RESET_PKT (-5)
 #define ALTMDM_RETURN_EXIT      (-6)
+#define ALTMDM_RETURN_SUSPENDED (-7)
 
 /****************************************************************************
  * Public Function Prototypes

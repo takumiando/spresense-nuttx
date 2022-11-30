@@ -1067,6 +1067,22 @@ static int altcom_recvthread(int argc, FAR char *argv[])
                 }
                 break;
 
+
+              case ALTMDM_RETURN_SUSPENDED:
+                {
+                  m_info("recieve ALTMDM_RETURN_SUSPENDED\n");
+                  nxsem_post(&dev->rxthread_sem);
+                  while (1)
+                    {
+                      /* After receiving a suspend event, the ALT1250 driver
+                       * does not accept any requests and must stay alive.
+                       */
+
+                      sleep(1);
+                    }
+                }
+                break;
+
               default:
                 DEBUGASSERT(0);
                 break;
