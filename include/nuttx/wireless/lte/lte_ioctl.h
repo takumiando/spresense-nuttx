@@ -314,6 +314,9 @@
 #define LTE_CMDID_LWM2M_EXECRESP                 _CMDGRP_LWM2M(0x0119)
 #define LTE_CMDID_LWM2M_OBSERVEUPDATE            _CMDGRP_LWM2M(0x011A)
 
+#define LTE_CMDID_LWM2M_CHANGERAT                _CMDGRP_LWM2M(0x011B)
+#define LTE_CMDID_LWM2M_GETRAT                   _CMDGRP_LWM2M(0x011C)
+
 #define IS_LWM2M_EVENT(cid) (\
   ((cid) == LTE_CMDID_LWM2M_READ_EVT) ||  \
   ((cid) == LTE_CMDID_LWM2M_WRITE_EVT) || \
