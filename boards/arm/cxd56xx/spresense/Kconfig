@@ -850,4 +850,19 @@ config CXD56_CAMERA_LATE_INITIALIZE
 		The camera drivers can be initialized on an application code after system booted up
 		by enabling this configuration switch.
 
+choice
+	prompt "eMMC Power Pin selection"
+	default CXD56_EMMC_POWER_PIN_NONE
+
+config CXD56_EMMC_POWER_PIN_NONE
+	bool "None"
+
+config CXD56_EMMC_POWER_PIN_I2S0_BCK
+	bool "Use PIN I2S0_BCK"
+
+config CXD56_EMMC_POWER_PIN_UART2_CTS
+	bool "Use PIN UART2_CTS"
+
+endchoice
+
 endif
