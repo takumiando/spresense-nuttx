@@ -274,27 +274,6 @@ static ssize_t read_data(FAR struct alt1250_dev_s *dev,
  ****************************************************************************/
 
 static void write_evtbitmap(FAR struct alt1250_dev_s *dev,
-  uint64_t bitmap)
-{
-  nxsem_wait_uninterruptible(&dev->evtmaplock);
-
-  dev->evtbitmap |= bitmap;
-
-  if (dev->evtbitmap & ALT1250_EVTBIT_RESET)
-    {
-      dev->evtbitmap = ALT1250_EVTBIT_RESET;
-    }
-
-  m_info("write bitmap: 0x%llx\n", bitmap);
-
-  nxsem_post(&dev->evtmaplock);
-}
-
-/****************************************************************************
- * Name: write_evtbitmapwithlist
- ****************************************************************************/
-
-static void write_evtbitmapwithlist(FAR struct alt1250_dev_s *dev,
   uint64_t bitmap, FAR struct alt_container_s *container)
 {
   nxsem_wait_uninterruptible(&dev->evtmaplock);
@@ -306,7 +285,12 @@ static void write_evtbitmapwithlist(FAR struct alt1250_dev_s *dev,
       dev->evtbitmap = ALT1250_EVTBIT_RESET;
     }
 
-  add_list(&dev->replylist, container);
+  if (container)
+    {
+      add_list(&dev->replylist, container);
+    }
+
+  m_info("write bitmap: 0x%llx\n", bitmap);
 
   nxsem_post(&dev->evtmaplock);
 }
@@ -526,8 +510,11 @@ static void write_restart_param(FAR void *outp[], FAR void *buff)
  * Name: pollnotify
  ****************************************************************************/
 
-static void pollnotify(FAR struct alt1250_dev_s *dev)
+static void pollnotify(FAR struct alt1250_dev_s *dev, uint64_t bitmap,
+                       FAR struct alt_container_s *container)
 {
+  write_evtbitmap(dev, bitmap, container);
+
   nxsem_wait_uninterruptible(&dev->pfdlock);
 
   if (dev->pfd)
@@ -589,13 +576,9 @@ parse_handler_t get_parsehdlr(uint16_t altcid, uint8_t altver)
 
 static int alt1250_send_daemon_request(uint64_t bitmap)
 {
-  /* Set event bitmap */
-
-  write_evtbitmap(g_alt1250_dev, bitmap);
-
   /* Send event for daemon */
 
-  pollnotify(g_alt1250_dev);
+  pollnotify(g_alt1250_dev, bitmap, NULL);
 
   /* Waiting for daemon response */
 
@@ -983,16 +966,7 @@ static int altcom_recvthread(int argc, FAR char *argv[])
                                     &container);
               if (ret == OK)
                 {
-                  if (container)
-                    {
-                      write_evtbitmapwithlist(dev, bitmap, container);
-                    }
-                  else
-                    {
-                      write_evtbitmap(dev, bitmap);
-                    }
-
-                  pollnotify(dev);
+                  pollnotify(dev, bitmap, container);
                 }
               else
                 {
@@ -1027,9 +1001,9 @@ static int altcom_recvthread(int argc, FAR char *argv[])
       else if (ret == ALTMDM_RETURN_RESET_V1 ||
                ret == ALTMDM_RETURN_RESET_V4)
         {
-          reason = altmdm_get_reset_reason();
-
           m_info("recieve ALTMDM_RETURN_RESET_V1/V4\n");
+
+          reason = altmdm_get_reset_reason();
 
           ret = write_evtbuff_byidx(dev, 0, write_restart_param,
                                     (FAR void *)&reason);
@@ -1039,9 +1013,7 @@ static int altcom_recvthread(int argc, FAR char *argv[])
            */
 
           head = remove_list_all(&dev->waitlist);
-
-          write_evtbitmapwithlist(dev, ALT1250_EVTBIT_RESET, head);
-          pollnotify(dev);
+          pollnotify(dev, ALT1250_EVTBIT_RESET, head);
         }
       else if (ret == ALTMDM_RETURN_SUSPENDED)
         {
