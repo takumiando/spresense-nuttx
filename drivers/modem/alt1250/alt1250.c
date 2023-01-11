@@ -1001,9 +1001,11 @@ static int altcom_recvthread(int argc, FAR char *argv[])
       else if (ret == ALTMDM_RETURN_RESET_V1 ||
                ret == ALTMDM_RETURN_RESET_V4)
         {
-          m_info("recieve ALTMDM_RETURN_RESET_V1/V4\n");
-
           reason = altmdm_get_reset_reason();
+
+          m_info("recieve ALTMDM_RETURN_RESET_V%s reason: %d\n",
+                 (ret == ALTMDM_RETURN_RESET_V1) ? "1" : "4",
+                 reason);
 
           ret = write_evtbuff_byidx(dev, 0, write_restart_param,
                                     (FAR void *)&reason);
