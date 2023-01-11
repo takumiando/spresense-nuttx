@@ -30,6 +30,7 @@
 #include <poll.h>
 #include <errno.h>
 #include <arch/board/board.h>
+#include <nuttx/wireless/lte/lte.h>
 #include <nuttx/wireless/lte/lte_ioctl.h>
 #include <nuttx/modem/alt1250.h>
 #include <nuttx/power/pm.h>
@@ -418,6 +419,7 @@ static uint16_t cid_to_searchable(uint16_t cid, uint8_t altver)
   cid &= ~ALTCOM_CMDID_REPLY_BIT;
   if (altver == ALTCOM_VER4)
     {
+
       /* Change the command ID to Version 1
        * Even if it cannot be converted, try to search the table
        * using the original command ID.
@@ -1006,6 +1008,27 @@ static int altcom_recvthread(int argc, FAR char *argv[])
           m_info("recieve ALTMDM_RETURN_RESET_V%s reason: %d\n",
                  (ret == ALTMDM_RETURN_RESET_V1) ? "1" : "4",
                  reason);
+
+#if defined(CONFIG_MODEM_ALT1250_DISABLE_PV1) && \
+    defined(CONFIG_MODEM_ALT1250_DISABLE_PV4)
+#  error Unsupported configuration. Do not disable both PV1 and PV4.
+#endif
+
+#ifdef CONFIG_MODEM_ALT1250_DISABLE_PV1
+          if (ret == ALTMDM_RETURN_RESET_V1)
+            {
+              m_err("Unsupported ALTCOM Version: V1\n");
+              reason = LTE_RESTART_VERSION_ERROR;
+            }
+#endif
+
+#ifdef CONFIG_MODEM_ALT1250_DISABLE_PV4
+          if (ret == ALTMDM_RETURN_RESET_V4)
+            {
+              m_err("Unsupported ALTCOM Version: V4\n");
+              reason = LTE_RESTART_VERSION_ERROR;
+            }
+#endif
 
           ret = write_evtbuff_byidx(dev, 0, write_restart_param,
                                     (FAR void *)&reason);

@@ -47,7 +47,9 @@
  * Private Data
  ****************************************************************************/
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV1
 static uint16_t g_set_repevt = 0;
+#endif
 
 /****************************************************************************
  * Private Functions
@@ -107,6 +109,7 @@ static int32_t altcombs_set_quality(FAR lte_quality_t *data,
   return 0;
 }
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV1
 static void altcombs_set_cellinfo(
   FAR struct apicmd_cmddat_cellinfo_s *cmd_cellinfo,
   FAR lte_cellinfo_t *api_cellinfo)
@@ -163,7 +166,9 @@ static void altcombs_set_cellinfo(
 
   api_cellinfo->option = 0;
 }
+#endif
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
 static void altcombs_set_cellinfo_v4(
   FAR struct apicmd_cmddat_cellinfo_v4_s *cmd_cellinfo,
   FAR lte_cellinfo_t *api_cellinfo)
@@ -294,6 +299,7 @@ static void altcombs_set_cellinfo_v4(
         }
     }
 }
+#endif
 
 static void getltime_parse_response(
   FAR struct apicmd_cmddat_getltimeres_s *resp,
@@ -403,15 +409,20 @@ int32_t altcom_getltime_pkt_compose(FAR void **arg, size_t arglen,
 {
   int32_t size = 0;
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV1
   if (altver == ALTCOM_VER1)
     {
       *altcid = APICMDID_GET_LTIME;
     }
-  else if (altver == ALTCOM_VER4)
+  else
+#endif
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
+  if (altver == ALTCOM_VER4)
     {
       *altcid = APICMDID_GET_LTIME_V4;
     }
   else
+#endif
     {
       size = -ENOSYS;
     }
@@ -425,15 +436,20 @@ int32_t altcom_getoper_pkt_compose(FAR void **arg, size_t arglen,
 {
   int32_t size = 0;
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV1
   if (altver == ALTCOM_VER1)
     {
       *altcid = APICMDID_GET_OPERATOR;
     }
-  else if (altver == ALTCOM_VER4)
+  else
+#endif
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
+  if (altver == ALTCOM_VER4)
     {
       *altcid = APICMDID_GET_OPERATOR_V4;
     }
   else
+#endif
     {
       size = -ENOSYS;
     }
@@ -447,15 +463,20 @@ int32_t altcom_getqual_pkt_compose(FAR void **arg, size_t arglen,
 {
   int32_t size = 0;
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV1
   if (altver == ALTCOM_VER1)
     {
       *altcid = APICMDID_GET_QUALITY;
     }
-  else if (altver == ALTCOM_VER4)
+  else
+#endif
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
+  if (altver == ALTCOM_VER4)
     {
       *altcid = APICMDID_GET_QUALITY_V4;
     }
   else
+#endif
     {
       size = -ENOSYS;
     }
@@ -469,11 +490,13 @@ int32_t altcom_getcell_pkt_compose(FAR void **arg, size_t arglen,
 {
   int32_t size = 0;
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
   if (altver == ALTCOM_VER4)
     {
       *altcid = APICMDID_GET_CELLINFO_V4;
     }
   else
+#endif
     {
       size = -ENOTSUP;
     }
@@ -487,11 +510,13 @@ int32_t altcom_getrat_pkt_compose(FAR void **arg, size_t arglen,
 {
   int32_t size = 0;
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
   if (altver == ALTCOM_VER4)
     {
       *altcid = APICMDID_GET_RAT_V4;
     }
   else
+#endif
     {
       size = -ENOTSUP;
     }
@@ -504,9 +529,12 @@ int32_t altcom_setrat_pkt_compose(FAR void **arg, size_t arglen,
                                   const size_t pktsz, FAR uint16_t *altcid)
 {
   int32_t size = 0;
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
   FAR uint8_t *rat = (FAR uint8_t *)arg[0];
   FAR bool *persistent = (FAR bool *)arg[1];
+#endif
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
   if (altver == ALTCOM_VER4)
     {
       FAR struct apicmd_cmddat_setrat_s *out =
@@ -520,6 +548,7 @@ int32_t altcom_setrat_pkt_compose(FAR void **arg, size_t arglen,
       *altcid = APICMDID_SET_RAT_V4;
     }
   else
+#endif
     {
       size = -ENOTSUP;
     }
@@ -534,15 +563,20 @@ int32_t altcom_getimscap_pkt_compose(FAR void **arg, size_t arglen,
 {
   int32_t size = 0;
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV1
   if (altver == ALTCOM_VER1)
     {
       *altcid = APICMDID_GET_IMS_CAP;
     }
-  else if (altver == ALTCOM_VER4)
+  else
+#endif
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
+  if (altver == ALTCOM_VER4)
     {
       *altcid = APICMDID_GET_IMS_CAP_V4;
     }
   else
+#endif
     {
       size = -ENOSYS;
     }
@@ -574,15 +608,20 @@ int32_t altcom_setrepqual_pkt_compose(FAR void **arg, size_t arglen,
   out->interval = htonl(*period);
   size = sizeof(struct apicmd_cmddat_setrepquality_s);
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV1
   if (altver == ALTCOM_VER1)
     {
       *altcid = APICMDID_SET_REP_QUALITY;
     }
-  else if (altver == ALTCOM_VER4)
+  else
+#endif
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
+  if (altver == ALTCOM_VER4)
     {
       *altcid = APICMDID_SET_REP_QUALITY_V4;
     }
   else
+#endif
     {
       size = -ENOSYS;
     }
@@ -614,15 +653,20 @@ int32_t altcom_setrepcell_pkt_compose(FAR void **arg, size_t arglen,
   out->interval = htonl(*period);
   size = sizeof(struct apicmd_cmddat_setrepcellinfo_s);
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV1
   if (altver == ALTCOM_VER1)
     {
       *altcid = APICMDID_SET_REP_CELLINFO;
     }
-  else if (altver == ALTCOM_VER4)
+  else
+#endif
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
+  if (altver == ALTCOM_VER4)
     {
       *altcid = APICMDID_SET_REP_CELLINFO_V4;
     }
   else
+#endif
     {
       size = -ENOSYS;
     }
@@ -639,6 +683,7 @@ int32_t altcom_setrepevt_pkt_compose(FAR void **arg, size_t arglen,
   FAR simstat_report_cb_t *callback = (FAR simstat_report_cb_t *)arg[0];
   FAR int32_t *id = (FAR int32_t *)arg[1];
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV1
   if (altver == ALTCOM_VER1)
     {
       FAR struct apicmd_cmddat_setrepevt_s *out =
@@ -677,7 +722,10 @@ int32_t altcom_setrepevt_pkt_compose(FAR void **arg, size_t arglen,
       size = sizeof(struct apicmd_cmddat_setrepevt_s);
       *altcid = APICMDID_SET_REP_EVT;
     }
-  else if (altver == ALTCOM_VER4)
+  else
+#endif
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
+  if (altver == ALTCOM_VER4)
     {
       FAR struct apicmd_cmddat_setrepevt_v4_s *out =
         (FAR struct apicmd_cmddat_setrepevt_v4_s *)pktbuf;
@@ -702,6 +750,7 @@ int32_t altcom_setrepevt_pkt_compose(FAR void **arg, size_t arglen,
       *altcid = APICMDID_SET_REP_EVT_V4;
     }
   else
+#endif
     {
       size = -ENOSYS;
     }
@@ -738,6 +787,7 @@ int32_t altcom_getoper_pkt_parse(FAR struct alt1250_dev_s *dev,
   FAR int *ret = (FAR int *)arg[0];
   FAR char *oper = (FAR char *)arg[1];
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV1
   if (altver == ALTCOM_VER1)
     {
       FAR struct apicmd_cmddat_getoperatorres_s *in =
@@ -765,7 +815,10 @@ int32_t altcom_getoper_pkt_parse(FAR struct alt1250_dev_s *dev,
           strncpy(oper, (FAR const char *)in->oper, LTE_OPERATOR_LEN);
         }
     }
-  else if (altver == ALTCOM_VER4)
+  else
+#endif
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
+  if (altver == ALTCOM_VER4)
     {
       FAR struct apicmd_cmddat_getoperatorres_v4_s *in =
         (FAR struct apicmd_cmddat_getoperatorres_v4_s *)pktbuf;
@@ -792,6 +845,11 @@ int32_t altcom_getoper_pkt_parse(FAR struct alt1250_dev_s *dev,
           strncpy(oper, (FAR const char *)in->oper, LTE_OPERATOR_LEN);
         }
     }
+  else
+#endif
+    {
+      return -ENOSYS;
+    }
 
   return 0;
 }
@@ -804,6 +862,7 @@ int32_t altcom_getqual_pkt_parse(FAR struct alt1250_dev_s *dev,
   FAR int *ret = (FAR int *)arg[0];
   FAR lte_quality_t *quality = (FAR lte_quality_t *)arg[1];
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV1
   if (altver == ALTCOM_VER1)
     {
       FAR struct apicmd_cmddat_getqualityres_s *in =
@@ -817,7 +876,10 @@ int32_t altcom_getqual_pkt_parse(FAR struct alt1250_dev_s *dev,
           altcombs_set_quality(quality, &in->quality);
         }
     }
-  else if (altver == ALTCOM_VER4)
+  else
+#endif
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
+  if (altver == ALTCOM_VER4)
     {
       FAR struct apicmd_cmddat_getqualityres_v4_s *in =
         (FAR struct apicmd_cmddat_getqualityres_v4_s *)pktbuf;
@@ -828,6 +890,11 @@ int32_t altcom_getqual_pkt_parse(FAR struct alt1250_dev_s *dev,
 
       altcombs_set_quality(quality, &in->quality);
     }
+  else
+#endif
+    {
+      return -ENOSYS;
+    }
 
   return 0;
 }
@@ -837,9 +904,12 @@ int32_t altcom_getcell_pkt_parse(FAR struct alt1250_dev_s *dev,
                                  uint8_t altver, FAR void **arg,
                                  size_t arglen, FAR uint64_t *bitmap)
 {
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
   FAR int *ret = (FAR int *)arg[0];
   FAR lte_cellinfo_t *cellinfo = (FAR lte_cellinfo_t *)arg[1];
+#endif
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
   if (altver == ALTCOM_VER4)
     {
       FAR struct apicmd_cmddat_getcellinfores_v4_s *in =
@@ -851,6 +921,11 @@ int32_t altcom_getcell_pkt_parse(FAR struct alt1250_dev_s *dev,
 
       *ret = 0;
     }
+  else
+#endif
+    {
+      return -ENOSYS;
+    }
 
   return 0;
 }
@@ -860,9 +935,12 @@ int32_t altcom_getrat_pkt_parse(FAR struct alt1250_dev_s *dev,
                                 uint8_t altver, FAR void **arg,
                                 size_t arglen, FAR uint64_t *bitmap)
 {
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
   FAR int *ret = (FAR int *)arg[0];
   FAR lte_ratinfo_t *ratinfo = (FAR lte_ratinfo_t *)arg[1];
+#endif
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
   if (altver == ALTCOM_VER4)
     {
       FAR struct apicmd_cmddat_getratres_s *in =
@@ -881,6 +959,11 @@ int32_t altcom_getrat_pkt_parse(FAR struct alt1250_dev_s *dev,
           ratinfo->source            = in->source;
         }
     }
+  else
+#endif
+    {
+      return -ENOSYS;
+    }
 
   return 0;
 }
@@ -890,8 +973,11 @@ int32_t altcom_setrat_pkt_parse(FAR struct alt1250_dev_s *dev,
                                 uint8_t altver, FAR void **arg,
                                 size_t arglen, FAR uint64_t *bitmap)
 {
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
   FAR int *ret = (FAR int *)arg[0];
+#endif
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
   if (altver == ALTCOM_VER4)
     {
       FAR struct apicmd_cmddat_setratres_s *in =
@@ -903,6 +989,11 @@ int32_t altcom_setrat_pkt_parse(FAR struct alt1250_dev_s *dev,
         {
           m_err("Modem returned an error [%ld].\n", *ret);
         }
+    }
+  else
+#endif
+    {
+      return -ENOSYS;
     }
 
   return 0;
@@ -989,6 +1080,7 @@ int32_t altcom_repcell_pkt_parse(FAR struct alt1250_dev_s *dev,
 
   FAR lte_cellinfo_t *cellinfo = (FAR lte_cellinfo_t *)arg[0];
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV1
   if (altver == ALTCOM_VER1)
     {
       FAR struct apicmd_cmddat_cellinfo_s *in =
@@ -998,7 +1090,10 @@ int32_t altcom_repcell_pkt_parse(FAR struct alt1250_dev_s *dev,
 
       altcombs_set_cellinfo(in, cellinfo);
     }
-  else if (altver == ALTCOM_VER4)
+  else
+#endif
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
+  if (altver == ALTCOM_VER4)
     {
       FAR struct apicmd_cmddat_cellinfo_v4_s *in =
         (FAR struct apicmd_cmddat_cellinfo_v4_s *)pktbuf;
@@ -1006,6 +1101,11 @@ int32_t altcom_repcell_pkt_parse(FAR struct alt1250_dev_s *dev,
       cellinfo->nr_neighbor = LTE_NEIGHBOR_CELL_MAX;
 
       altcombs_set_cellinfo_v4(in, cellinfo);
+    }
+  else
+#endif
+    {
+      return -ENOSYS;
     }
 
   return 0;
@@ -1018,6 +1118,7 @@ int32_t altcom_setrepevt_pkt_parse(FAR struct alt1250_dev_s *dev,
 {
   FAR int *ret = (FAR int *)arg[0];
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV1
   if (altver == ALTCOM_VER1)
     {
       FAR struct apicmd_cmddat_setrepevtres_s *in =
@@ -1025,12 +1126,20 @@ int32_t altcom_setrepevt_pkt_parse(FAR struct alt1250_dev_s *dev,
 
       *ret = (APICMD_SET_REP_EVT_RES_OK == in->result) ? 0 : -EIO;
     }
-  else if (altver == ALTCOM_VER4)
+  else
+#endif
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
+  if (altver == ALTCOM_VER4)
     {
       FAR struct apicmd_cmddat_setrepevtres_v4_s *in =
         (FAR struct apicmd_cmddat_setrepevtres_v4_s *)pktbuf;
 
       *ret = (APICMD_SET_REP_EVT_RES_OK == in->result) ? 0 : -EIO;
+    }
+  else
+#endif
+    {
+      return -ENOSYS;
     }
 
   return 0;
@@ -1044,6 +1153,7 @@ int32_t altcom_repevt_pkt_parse(FAR struct alt1250_dev_s *dev,
   int32_t ret = -ENOTSUP;
   alt_evtbuf_inst_t *inst;
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV1
   if (altver == ALTCOM_VER1)
     {
       FAR struct apicmd_cmddat_repevt_s *in =
@@ -1091,7 +1201,10 @@ int32_t altcom_repevt_pkt_parse(FAR struct alt1250_dev_s *dev,
             break;
         }
     }
-  else if (altver == ALTCOM_VER4)
+  else
+#endif
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
+  if (altver == ALTCOM_VER4)
     {
       FAR struct apicmd_cmddat_repevt_v4_s *in =
         (FAR struct apicmd_cmddat_repevt_v4_s *)pktbuf;
@@ -1138,6 +1251,11 @@ int32_t altcom_repevt_pkt_parse(FAR struct alt1250_dev_s *dev,
             }
             break;
         }
+    }
+  else
+#endif
+    {
+      return -ENOSYS;
     }
 
   return ret;

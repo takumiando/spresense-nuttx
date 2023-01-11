@@ -122,15 +122,20 @@ int32_t altcom_getphone_pkt_compose(FAR void **arg, size_t arglen,
 {
   int32_t size = 0;
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV1
   if (altver == ALTCOM_VER1)
     {
       *altcid = APICMDID_GET_PHONENO;
     }
-  else if (altver == ALTCOM_VER4)
+  else
+#endif
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
+  if (altver == ALTCOM_VER4)
     {
       *altcid = APICMDID_GET_PHONENO_V4;
     }
   else
+#endif
     {
       size = -ENOSYS;
     }
@@ -144,15 +149,20 @@ int32_t altcom_getimsi_pkt_compose(FAR void **arg, size_t arglen,
 {
   int32_t size = 0;
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV1
   if (altver == ALTCOM_VER1)
     {
       *altcid = APICMDID_GET_IMSI;
     }
-  else if (altver == ALTCOM_VER4)
+  else
+#endif
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
+  if (altver == ALTCOM_VER4)
     {
       *altcid = APICMDID_GET_IMSI_V4;
     }
   else
+#endif
     {
       size = -ENOSYS;
     }
@@ -174,15 +184,20 @@ int32_t altcom_getsiminfo_pkt_compose(FAR void **arg, size_t arglen,
   out->option = htonl(*option);
   size = sizeof(struct apicmd_cmddat_getsiminfo_s);
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV1
   if (altver == ALTCOM_VER1)
     {
       *altcid = APICMDID_GET_SIMINFO;
     }
-  else if (altver == ALTCOM_VER4)
+  else
+#endif
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
+  if (altver == ALTCOM_VER4)
     {
       *altcid = APICMDID_GET_SIMINFO_V4;
     }
   else
+#endif
     {
       size = -ENOSYS;
     }

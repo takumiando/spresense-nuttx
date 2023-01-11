@@ -443,6 +443,10 @@
 
 #define LTE_RESTART_MODEM_INITIATED (1)
 
+/* Modem restart cause: Modem firmware version error */
+
+#define LTE_RESTART_VERSION_ERROR   (2)
+
 /* Error indicator for error code */
 
 #define LTE_ERR_INDICATOR_ERRCODE  (0x01)

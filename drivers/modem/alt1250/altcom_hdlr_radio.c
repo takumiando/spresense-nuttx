@@ -44,15 +44,20 @@ int32_t altcom_radioon_pkt_compose(FAR void **arg, size_t arglen,
 {
   int32_t size = 0;
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV1
   if (altver == ALTCOM_VER1)
     {
       *altcid = APICMDID_RADIO_ON;
     }
-  else if (altver == ALTCOM_VER4)
+  else
+#endif
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
+  if (altver == ALTCOM_VER4)
     {
       *altcid = APICMDID_RADIO_ON_V4;
     }
   else
+#endif
     {
       size = -ENOSYS;
     }
@@ -66,15 +71,20 @@ int32_t altcom_radiooff_pkt_compose(FAR void **arg, size_t arglen,
 {
   int32_t size = 0;
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV1
   if (altver == ALTCOM_VER1)
     {
       *altcid = APICMDID_RADIO_OFF;
     }
-  else if (altver == ALTCOM_VER4)
+  else
+#endif
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
+  if (altver == ALTCOM_VER4)
     {
       *altcid = APICMDID_RADIO_OFF_V4;
     }
   else
+#endif
     {
       size = -ENOSYS;
     }
