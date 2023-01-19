@@ -2174,7 +2174,7 @@ static int32_t setrepevt_pkt_compose(FAR void **arg,
         }
       else
         {
-          size = -ENOSYS;
+          return -ENOSYS;
         }
 
       out->event = g_set_repevt;
@@ -2188,38 +2188,20 @@ static int32_t setrepevt_pkt_compose(FAR void **arg,
 
       if (*id == LTE_CMDID_REPSIMSTAT)
         {
-          if (callback)
-            {
-              g_set_repevt |=
-                (APICMD_SET_REP_EVT_SIMD | APICMD_SET_REP_EVT_SIMSTATE);
-              out->enability = APICMD_SET_REP_EVT_ENABLE;
-            }
-          else
-            {
-              g_set_repevt &=
-                ~(APICMD_SET_REP_EVT_SIMD | APICMD_SET_REP_EVT_SIMSTATE);
-              out->enability = APICMD_SET_REP_EVT_DISABLE;
-            }
+          out->event = htons(APICMD_SET_REP_EVT_SIMD |
+                             APICMD_SET_REP_EVT_SIMSTATE);
         }
       else if(*id == LTE_CMDID_REPLTIME)
         {
-          if (callback)
-            {
-              g_set_repevt |= APICMD_SET_REP_EVT_LTIME;
-              out->enability = APICMD_SET_REP_EVT_ENABLE;
-            }
-          else
-            {
-              g_set_repevt &= ~APICMD_SET_REP_EVT_LTIME;
-              out->enability = APICMD_SET_REP_EVT_DISABLE;
-            }
+          out->event = htons(APICMD_SET_REP_EVT_LTIME);
         }
       else
         {
-          size = -ENOSYS;
+          return -ENOSYS;
         }
 
-      out->event = htons(g_set_repevt);
+      out->enability = callback ? APICMD_SET_REP_EVT_ENABLE :
+                                  APICMD_SET_REP_EVT_DISABLE;
       size = sizeof(struct apicmd_cmddat_setrepevt_v4_s);
       *altcid = APICMDID_SET_REP_EVT_V4;
     }
