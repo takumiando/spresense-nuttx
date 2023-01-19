@@ -261,11 +261,11 @@ static int32_t altcombs_convert_apicmd_edrx_value(
       else if (cmd_edrx->acttype == APICMD_EDRX_ACTTYPE_NBS1)
         {
           api_edrx->act_type = LTE_EDRX_ACTTYPE_NBS1;
-          if (cmd_edrx->edrx_cycle <= APICMD_EDRX_CYC_1048576 &&
-              (cmd_edrx->edrx_cycle == APICMD_EDRX_CYC_2048 ||
-               cmd_edrx->edrx_cycle == APICMD_EDRX_CYC_4096 ||
-               cmd_edrx->edrx_cycle == APICMD_EDRX_CYC_8192 ||
-               cmd_edrx->edrx_cycle >= APICMD_EDRX_CYC_16384))
+          if (cmd_edrx->edrx_cycle <= LTE_EDRX_CYC_1048576 &&
+              (cmd_edrx->edrx_cycle == LTE_EDRX_CYC_2048 ||
+               cmd_edrx->edrx_cycle == LTE_EDRX_CYC_4096 ||
+               cmd_edrx->edrx_cycle == LTE_EDRX_CYC_8192 ||
+               cmd_edrx->edrx_cycle >= LTE_EDRX_CYC_16384))
             {
               api_edrx->edrx_cycle = cmd_edrx->edrx_cycle;
             }
