@@ -216,7 +216,7 @@ enum board_power_device
 #define BOARD_POWEROFF_DEEP (0)
 #define BOARD_POWEROFF_COLD (1)
 
-/* Power domain definitions **********************************************/
+/* Power domain definitions *************************************************/
 
 #define BOARD_PM_IDLE       (0)
 #define BOARD_PM_APPS       (1)
@@ -241,6 +241,21 @@ enum board_power_device
 #define DISPLAY_DMA_RXCH       (5)
 #define DISPLAY_DMA_TXCH_CFG   CXD56_DMA_PERIPHERAL_SPI5_TX
 #define DISPLAY_DMA_RXCH_CFG   CXD56_DMA_PERIPHERAL_SPI5_RX
+#define DISPLAY_DMA_TX_MAXSIZE (192000)
+#define DISPLAY_DMA_RX_MAXSIZE (192000)
+
+#elif defined(CONFIG_LCD_ON_LTE_EXTENSION_BOARD)
+
+/* Display connected to LTE extension board. */
+
+#define DISPLAY_SPI     3
+
+/* Specify invalid channels because DMA cannot be used */
+
+#define DISPLAY_DMA_TXCH       (-1)
+#define DISPLAY_DMA_RXCH       (-1)
+#define DISPLAY_DMA_TXCH_CFG   (-1)
+#define DISPLAY_DMA_RXCH_CFG   (-1)
 #define DISPLAY_DMA_TX_MAXSIZE (192000)
 #define DISPLAY_DMA_RX_MAXSIZE (192000)
 
