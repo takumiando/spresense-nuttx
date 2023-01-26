@@ -332,6 +332,13 @@
   ((cid) == LTE_CMDID_LWM2M_SERVEROP_EVT) ||  \
   ((cid) == LTE_CMDID_LWM2M_FWUP_EVT) )
 
+#define IS_LTE_REPORT_EVENT(cid) (\
+  ((cid) == LTE_CMDID_REPNETINFO) ||  \
+  ((cid) == LTE_CMDID_REPSIMSTAT) || \
+  ((cid) == LTE_CMDID_REPLTIME) ||  \
+  ((cid) == LTE_CMDID_REPQUAL) || \
+  ((cid) == LTE_CMDID_REPCELL) )
+
 /****************************************************************************
  * Public Types
  ****************************************************************************/
