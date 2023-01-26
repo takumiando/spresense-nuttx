@@ -25,11 +25,14 @@
 #include <nuttx/config.h>
 
 #include <nuttx/kmalloc.h>
+#include <nuttx/kthread.h>
 #include <nuttx/fs/fs.h>
 #include <poll.h>
 #include <errno.h>
+#include <arch/board/board.h>
 #include <nuttx/wireless/lte/lte_ioctl.h>
 #include <nuttx/modem/alt1250.h>
+#include <nuttx/power/pm.h>
 #include <assert.h>
 
 #include "altcom_pkt.h"
@@ -44,6 +47,16 @@
 #define WRITE_NG 1
 
 #define rel_evtbufinst(inst, dev) unlock_evtbufinst(inst, dev)
+
+/****************************************************************************
+ * Private Types
+ ****************************************************************************/
+
+struct alt1250_res_s
+{
+  sem_t sem;
+  int code;
+};
 
 /****************************************************************************
  * Private Function Prototypes
@@ -63,6 +76,13 @@ parse_handler_t alt1250_additional_parsehdlr(uint16_t, uint8_t);
 compose_handler_t alt1250_additional_composehdlr(uint32_t,
     FAR uint8_t *, size_t);
 
+#ifdef CONFIG_PM
+static int alt1250_pm_prepare(struct pm_callback_s *cb, int domain,
+                              enum pm_state_e pmstate);
+static void alt1250_pm_notify(struct pm_callback_s *cb, int domain,
+                              enum pm_state_e pmstate);
+#endif
+
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -81,6 +101,18 @@ static const struct file_operations g_alt1250fops =
 };
 static uint8_t g_recvbuff[ALTCOM_RX_PKT_SIZE_MAX];
 static uint8_t g_sendbuff[ALTCOM_PKT_SIZE_MAX];
+
+static struct alt1250_dev_s *g_alt1250_dev;
+
+#ifdef CONFIG_PM
+static struct pm_callback_s g_alt1250pmcb =
+{
+  .notify  = alt1250_pm_notify,
+  .prepare = alt1250_pm_prepare,
+};
+
+static struct alt1250_res_s g_alt1250_res_s;
+#endif
 
 /****************************************************************************
  * Private Functions
@@ -550,6 +582,44 @@ parse_handler_t get_parsehdlr(uint16_t altcid, uint8_t altver)
   return ret;
 }
 
+#ifdef CONFIG_PM
+/****************************************************************************
+ * Name: alt1250_send_daemon_request
+ ****************************************************************************/
+
+static int alt1250_send_daemon_request(uint64_t bitmap)
+{
+  /* Set event bitmap */
+
+  write_evtbitmap(g_alt1250_dev, bitmap);
+
+  /* Send event for daemon */
+
+  pollnotify(g_alt1250_dev);
+
+  /* Waiting for daemon response */
+
+  nxsem_wait_uninterruptible(&g_alt1250_res_s.sem);
+
+  return g_alt1250_res_s.code;
+}
+
+/****************************************************************************
+ * Name: alt1250_receive_daemon_response
+ ****************************************************************************/
+
+static void alt1250_receive_daemon_response(FAR struct alt_power_s *req)
+{
+  /* Store daemon response code */
+
+  g_alt1250_res_s.code = req->resp;
+
+  /* Post request semaphore */
+
+  nxsem_post(&g_alt1250_res_s.sem);
+}
+#endif
+
 /****************************************************************************
  * Name: alt1250_power_control
  ****************************************************************************/
@@ -575,6 +645,21 @@ static int alt1250_power_control(FAR struct alt1250_dev_s *dev,
 
       case LTE_CMDID_GIVEWLOCK:
         ret = altmdm_give_wlock();
+        break;
+
+#ifdef CONFIG_PM
+      case LTE_CMDID_STOPAPI:
+      case LTE_CMDID_SUSPEND:
+        alt1250_receive_daemon_response(req);
+        break;
+#endif
+
+      case LTE_CMDID_RETRYDISABLE:
+        ret = altmdm_set_pm_event(EVENT_RETRYREQ, false);
+        break;
+
+      case LTE_CMDID_GET_POWER_STAT:
+        ret = altmdm_get_powersupply(dev->lower);
         break;
 
       default:
@@ -735,10 +820,10 @@ static int exchange_selectcontainer(FAR struct alt1250_dev_s *dev,
  * Name: altcom_recvthread
  ****************************************************************************/
 
-static void altcom_recvthread(FAR void *arg)
+static int altcom_recvthread(int argc, FAR char *argv[])
 {
   int ret;
-  FAR struct alt1250_dev_s *dev = (FAR struct alt1250_dev_s *)arg;
+  FAR struct alt1250_dev_s *dev = g_alt1250_dev;
   bool is_running = true;
   FAR struct alt_container_s *head;
   FAR struct alt_container_s *container;
@@ -982,6 +1067,22 @@ static void altcom_recvthread(FAR void *arg)
                 }
                 break;
 
+
+              case ALTMDM_RETURN_SUSPENDED:
+                {
+                  m_info("recieve ALTMDM_RETURN_SUSPENDED\n");
+                  nxsem_post(&dev->rxthread_sem);
+                  while (1)
+                    {
+                      /* After receiving a suspend event, the ALT1250 driver
+                       * does not accept any requests and must stay alive.
+                       */
+
+                      sleep(1);
+                    }
+                }
+                break;
+
               default:
                 DEBUGASSERT(0);
                 break;
@@ -991,9 +1092,53 @@ static void altcom_recvthread(FAR void *arg)
       recvedlen = 0;
     }
 
+  nxsem_post(&dev->rxthread_sem);
+
   m_info("recv thread end\n");
 
-  pthread_exit(0);
+  return 0;
+}
+
+/****************************************************************************
+ * Name: alt1250_start_rxthread
+ ****************************************************************************/
+
+static int alt1250_start_rxthread(FAR struct alt1250_dev_s *dev,
+                                  bool senddisable)
+{
+  int ret = OK;
+
+  nxsem_init(&dev->waitlist.lock, 0, 1);
+  nxsem_init(&dev->replylist.lock, 0, 1);
+  nxsem_init(&dev->evtmaplock, 0, 1);
+  nxsem_init(&dev->pfdlock, 0, 1);
+  nxsem_init(&dev->senddisablelock, 0, 1);
+  nxsem_init(&dev->select_inst.stat_lock, 0, 1);
+
+  sq_init(&dev->waitlist.queue);
+  sq_init(&dev->replylist.queue);
+
+  dev->senddisable = senddisable;
+
+  ret = kthread_create("altcom_recvthread",
+                       SCHED_PRIORITY_DEFAULT,
+                       CONFIG_DEFAULT_TASK_STACKSIZE,
+                       altcom_recvthread,
+                       (FAR char * const *)NULL);
+
+  if (ret < 0)
+    {
+      m_err("kthread create failed: %d\n", errno);
+
+      nxsem_destroy(&dev->waitlist.lock);
+      nxsem_destroy(&dev->replylist.lock);
+      nxsem_destroy(&dev->evtmaplock);
+      nxsem_destroy(&dev->pfdlock);
+      nxsem_destroy(&dev->senddisablelock);
+      nxsem_destroy(&dev->select_inst.stat_lock);
+    }
+
+  return ret;
 }
 
 /****************************************************************************
@@ -1018,7 +1163,8 @@ static int alt1250_open(FAR struct file *filep)
 
   if (dev->crefs > 0)
     {
-      ret = -EPERM;
+      nxsem_post(&dev->refslock);
+      return -EPERM;
     }
 
   /* Increment the count of open references on the driver */
@@ -1027,43 +1173,17 @@ static int alt1250_open(FAR struct file *filep)
 
   nxsem_post(&dev->refslock);
 
-  if (ret == OK)
+  if (dev->rxthread_pid < 0)
     {
-      nxsem_init(&dev->waitlist.lock, 0, 1);
-      nxsem_init(&dev->replylist.lock, 0, 1);
-      nxsem_init(&dev->evtmaplock, 0, 1);
-      nxsem_init(&dev->pfdlock, 0, 1);
-      nxsem_init(&dev->senddisablelock, 0, 1);
-      nxsem_init(&dev->select_inst.stat_lock, 0, 1);
+      dev->rxthread_pid = alt1250_start_rxthread(dev, true);
+    }
 
-      sq_init(&dev->waitlist.queue);
-      sq_init(&dev->replylist.queue);
-
-      dev->senddisable = true;
-
-      ret = pthread_create(&dev->recvthread, NULL,
-        (pthread_startroutine_t)altcom_recvthread,
-        (pthread_addr_t)dev);
-      if (ret < 0)
-        {
-          m_err("thread create failed: %d\n", errno);
-          ret = -errno;
-
-          nxsem_destroy(&dev->waitlist.lock);
-          nxsem_destroy(&dev->replylist.lock);
-          nxsem_destroy(&dev->evtmaplock);
-          nxsem_destroy(&dev->pfdlock);
-          nxsem_destroy(&dev->senddisablelock);
-          nxsem_destroy(&dev->select_inst.stat_lock);
-
-          nxsem_wait_uninterruptible(&dev->refslock);
-          dev->crefs--;
-          nxsem_post(&dev->refslock);
-        }
-      else
-        {
-          pthread_setname_np(dev->recvthread, "altcom_recvthread");
-        }
+  if (dev->rxthread_pid < 0)
+    {
+      ret = dev->rxthread_pid;
+      nxsem_wait_uninterruptible(&dev->refslock);
+      dev->crefs--;
+      nxsem_post(&dev->refslock);
     }
 
   return ret;
@@ -1077,7 +1197,6 @@ static int alt1250_close(FAR struct file *filep)
 {
   FAR struct inode *inode;
   FAR struct alt1250_dev_s *dev;
-  int ret = OK;
 
   /* Get our private data structure */
 
@@ -1091,31 +1210,28 @@ static int alt1250_close(FAR struct file *filep)
 
   if (dev->crefs == 0)
     {
-      ret = -EPERM;
+      nxsem_post(&dev->refslock);
+      return -EPERM;
     }
-  else
-    {
-      /* Decrement the count of open references on the driver */
 
-      dev->crefs--;
-    }
+  /* Decrement the count of open references on the driver */
+
+  dev->crefs--;
 
   nxsem_post(&dev->refslock);
 
-  if (ret == OK)
-    {
-      nxsem_destroy(&dev->waitlist.lock);
-      nxsem_destroy(&dev->replylist.lock);
-      nxsem_destroy(&dev->evtmaplock);
-      nxsem_destroy(&dev->pfdlock);
-      nxsem_destroy(&dev->senddisablelock);
-      nxsem_destroy(&dev->select_inst.stat_lock);
+  nxsem_destroy(&dev->waitlist.lock);
+  nxsem_destroy(&dev->replylist.lock);
+  nxsem_destroy(&dev->evtmaplock);
+  nxsem_destroy(&dev->pfdlock);
+  nxsem_destroy(&dev->senddisablelock);
+  nxsem_destroy(&dev->select_inst.stat_lock);
 
-      altmdm_fin();
-      pthread_join(dev->recvthread, NULL);
-    }
+  altmdm_fin();
+  dev->rxthread_pid = -1;
+  nxsem_wait_uninterruptible(&dev->rxthread_sem);
 
-  return ret;
+  return OK;
 }
 
 /****************************************************************************
@@ -1264,6 +1380,91 @@ errout:
   return ret;
 }
 
+#ifdef CONFIG_PM
+/****************************************************************************
+ * Name: alt1250_pm_prepare
+ ****************************************************************************/
+
+static int alt1250_pm_prepare(struct pm_callback_s *cb, int domain,
+                              enum pm_state_e pmstate)
+{
+  int  ret   = OK;
+  bool power = false;
+
+  /* ALT1250's power management only support BOARD_PM_APPS */
+
+  if (domain != BOARD_PM_APPS)
+    {
+      return OK;
+    }
+
+  if (pmstate == PM_SLEEP)
+    {
+      power = altmdm_get_powersupply(g_alt1250_dev->lower);
+
+      if (!power)
+        {
+          /* If the modem doesn't turned on, system can enter sleep */
+
+          return OK;
+        }
+
+      ret = alt1250_send_daemon_request(ALT1250_EVTBIT_STOPAPI);
+
+      if (ret)
+        {
+          return ERROR;
+        }
+      else
+        {
+          return OK;
+        }
+    }
+
+  return ret;
+}
+
+/****************************************************************************
+ * Name: alt1250_pm_notify
+ ****************************************************************************/
+
+static void alt1250_pm_notify(struct pm_callback_s *cb, int domain,
+                              enum pm_state_e pmstate)
+{
+  bool power;
+
+  /* ALT1250's power management only supports BOARD_PM_APPS */
+
+  if ((domain == BOARD_PM_APPS) && (pmstate == PM_SLEEP))
+    {
+      power = altmdm_get_powersupply(g_alt1250_dev->lower);
+
+      if (power)
+        {
+          /* Set retry mode for SPI driver */
+
+          altmdm_set_pm_event(EVENT_RETRYREQ, true);
+
+          /* Send suspend request to daemon */
+
+          alt1250_send_daemon_request(ALT1250_EVTBIT_SUSPEND);
+
+          /* Set suspend mode for SPI driver */
+
+          altmdm_set_pm_event(EVENT_SUSPEND, true);
+
+          /* Waiting for entering sleep state */
+
+          nxsem_wait_uninterruptible(&g_alt1250_dev->rxthread_sem);
+
+          /* Enable LTE hibernation mode for wakeup from LTE */
+
+          g_alt1250_dev->lower->hiber_mode(true);
+        }
+    }
+}
+#endif
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -1289,6 +1490,23 @@ FAR void *alt1250_register(FAR const char *devpath,
 
   nxsem_init(&priv->refslock, 0, 1);
 
+  nxsem_init(&priv->rxthread_sem, 0, 0);
+
+  g_alt1250_dev = priv;
+
+#ifdef CONFIG_PM
+  ret = pm_register(&g_alt1250pmcb);
+
+  if (ret != OK)
+    {
+      m_err("Failed to register PM: %d\n", ret);
+      kmm_free(priv);
+      return NULL;
+    }
+
+  nxsem_init(&g_alt1250_res_s.sem, 0, 0);
+#endif
+
   ret = register_driver(devpath, &g_alt1250fops, 0666, priv);
   if (ret < 0)
     {
@@ -1296,6 +1514,15 @@ FAR void *alt1250_register(FAR const char *devpath,
       kmm_free(priv);
       return NULL;
     }
+
+  priv->rxthread_pid = -1;
+
+#ifdef CONFIG_PM
+  if (altmdm_get_powersupply(priv->lower))
+    {
+      priv->rxthread_pid = alt1250_start_rxthread(priv, false);
+    }
+#endif
 
   return (FAR void *)priv;
 }

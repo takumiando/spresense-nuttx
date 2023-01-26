@@ -1988,4 +1988,16 @@ typedef void (*get_current_psm_cb_t)(uint32_t result,
 typedef void (*get_quality_cb_t)(uint32_t result,
                                  lte_quality_t *quality);
 
+/* Definition of callback function.
+ *
+ * This callback function is used for nitifying a daemon
+ * context data for resume.
+ *
+ * [in] data : Context data body.
+ *
+ * [in] size : Context data size
+ */
+
+typedef void (*context_save_cb_t)(uint8_t *data, int size);
+
 #endif /* __INCLUDE_NUTTX_WIRELESS_LTE_LTE_H */
