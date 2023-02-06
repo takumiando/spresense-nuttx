@@ -411,7 +411,8 @@ static void process_before_poweroff(void)
 
   /* clear event without EVENT_POWERON */
 
-  altmdm_event_clear(&g_altmdm_dev.event, (allevt & ~(EVENT_POWERON)));
+  altmdm_event_clear(&g_altmdm_dev.event,
+                     (allevt & ~(EVENT_POWERON | EVENT_DESTROY)));
   g_altmdm_dev.lower->irqenable(false);
   g_altmdm_dev.lower->set_wakeup(false);
   g_altmdm_dev.lower->set_mready(false);
@@ -1530,35 +1531,9 @@ int altmdm_init(FAR struct spi_dev_s *spidev,
 
 int altmdm_fin(void)
 {
-  int ret = OK;
-  uint32_t evt;
+  altmdm_event_set(&g_altmdm_dev.event, EVENT_DESTROY);
 
-  nxsem_wait_uninterruptible(&g_altmdm_dev.lock_evt);
-
-  evt = altmdm_event_refer(&g_altmdm_dev.event);
-
-  /* Is already accepted DESTROY request? */
-
-  if (evt & EVENT_DESTROY)
-    {
-      ret = -EALREADY;
-    }
-
-  /* Is in DESTROY state? */
-
-  if (g_altmdm_dev.current_state == ALTMDM_STATE_DESTORY)
-    {
-      ret = -EALREADY;
-    }
-
-  if (ret == OK)
-    {
-      altmdm_event_set(&g_altmdm_dev.event, EVENT_DESTROY);
-    }
-
-  nxsem_post(&g_altmdm_dev.lock_evt);
-
-  return ret;
+  return OK;
 }
 
 int altmdm_poweron(void)
