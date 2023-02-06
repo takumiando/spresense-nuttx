@@ -274,27 +274,6 @@ static ssize_t read_data(FAR struct alt1250_dev_s *dev,
  ****************************************************************************/
 
 static void write_evtbitmap(FAR struct alt1250_dev_s *dev,
-  uint64_t bitmap)
-{
-  nxsem_wait_uninterruptible(&dev->evtmaplock);
-
-  dev->evtbitmap |= bitmap;
-
-  if (dev->evtbitmap & ALT1250_EVTBIT_RESET)
-    {
-      dev->evtbitmap = ALT1250_EVTBIT_RESET;
-    }
-
-  m_info("write bitmap: 0x%llx\n", bitmap);
-
-  nxsem_post(&dev->evtmaplock);
-}
-
-/****************************************************************************
- * Name: write_evtbitmapwithlist
- ****************************************************************************/
-
-static void write_evtbitmapwithlist(FAR struct alt1250_dev_s *dev,
   uint64_t bitmap, FAR struct alt_container_s *container)
 {
   nxsem_wait_uninterruptible(&dev->evtmaplock);
@@ -306,7 +285,12 @@ static void write_evtbitmapwithlist(FAR struct alt1250_dev_s *dev,
       dev->evtbitmap = ALT1250_EVTBIT_RESET;
     }
 
-  add_list(&dev->replylist, container);
+  if (container)
+    {
+      add_list(&dev->replylist, container);
+    }
+
+  m_info("write bitmap: 0x%llx\n", bitmap);
 
   nxsem_post(&dev->evtmaplock);
 }
@@ -526,8 +510,11 @@ static void write_restart_param(FAR void *outp[], FAR void *buff)
  * Name: pollnotify
  ****************************************************************************/
 
-static void pollnotify(FAR struct alt1250_dev_s *dev)
+static void pollnotify(FAR struct alt1250_dev_s *dev, uint64_t bitmap,
+                       FAR struct alt_container_s *container)
 {
+  write_evtbitmap(dev, bitmap, container);
+
   nxsem_wait_uninterruptible(&dev->pfdlock);
 
   if (dev->pfd)
@@ -589,13 +576,9 @@ parse_handler_t get_parsehdlr(uint16_t altcid, uint8_t altver)
 
 static int alt1250_send_daemon_request(uint64_t bitmap)
 {
-  /* Set event bitmap */
-
-  write_evtbitmap(g_alt1250_dev, bitmap);
-
   /* Send event for daemon */
 
-  pollnotify(g_alt1250_dev);
+  pollnotify(g_alt1250_dev, bitmap, NULL);
 
   /* Waiting for daemon response */
 
@@ -821,6 +804,130 @@ static int exchange_selectcontainer(FAR struct alt1250_dev_s *dev,
 }
 
 /****************************************************************************
+ * Name: parse_altcompkt
+ ****************************************************************************/
+
+static int parse_altcompkt(FAR struct alt1250_dev_s *dev, FAR uint8_t *pkt,
+                           int pktlen, FAR uint64_t *bitmap,
+                           FAR struct alt_container_s **container)
+{
+  int ret;
+  FAR struct altcom_cmdhdr_s *h = (FAR struct altcom_cmdhdr_s *)pkt;
+  uint16_t cid = parse_cid(h);
+  uint16_t tid = parse_tid(h);
+  parse_handler_t parser;
+  FAR alt_evtbuf_inst_t *inst;
+  FAR void **outparam;
+  size_t outparamlen;
+
+  m_info("receive cid:0x%04x tid:0x%04x\n", cid, tid);
+
+  parser = get_parsehdlr(cid, get_altver(h));
+  if (is_errind(cid))
+    {
+      /* Get ALTCOM command ID and transaction ID
+       * from payload
+       */
+
+      cid = parse_cid4errind(h);
+      tid = parse_tid4errind(h);
+      m_err("ALT1250 does not support this command. cid:0x%04x tid:0x%04x\n",
+            cid, tid);
+      cid |= ALTCOM_CMDID_REPLY_BIT;
+    }
+
+  *container = remove_list(&dev->waitlist, cid, tid);
+
+  m_info("container %sfound. cid:0x%04x tid:0x%04x\n",
+         *container == NULL ? "not " : "", cid, tid);
+
+  if (parser == NULL)
+    {
+      m_err("parser is not found\n");
+
+      /* If there is a container, use the container to notify
+       * daemon of the event. Otherwise, discard the event.
+       */
+
+      if (*container)
+        {
+          (*container)->result = -ENOSYS;
+        }
+
+      return *container == NULL ? ERROR: OK;
+    }
+
+  /* Obtain outparam and bitmap required for parser execution arguments. */
+
+  if (*container)
+    {
+      outparam = (*container)->outparam;
+      outparamlen = (*container)->outparamlen;
+      *bitmap = get_bitmap(dev, cid, get_altver(h));
+    }
+  else
+    {
+      /* The outparam is updated in the parser. Lock until the parser
+       * returns to prevent outparam from being updated by other tasks.
+       */
+
+      inst = get_evtbuffinst_withlock(dev, cid, get_altver(h), bitmap);
+      if (inst)
+        {
+          outparam = inst->outparam;
+          outparamlen = inst->outparamlen;
+        }
+      else
+        {
+          /* Error return means that the event will be discarded. */
+
+          return ERROR;
+        }
+    }
+
+  ret = parser(dev, get_payload(h), get_payload_len(h), get_altver(h),
+               outparam, outparamlen, bitmap);
+
+  if (*container)
+    {
+      (*container)->result = ret;
+      if (LTE_IS_ASYNC_CMD((*container)->cmdid))
+        {
+          /* Asynchronous types need to call the callback corresponding
+           * to the received event, so the REPLY bit is added to the
+           * received event.
+           */
+
+          *bitmap |= ALT1250_EVTBIT_REPLY;
+        }
+      else
+        {
+          /* Synchronous types do not call a callback,
+           * so only the REPLY bit is needed.
+           */
+
+          *bitmap = ALT1250_EVTBIT_REPLY;
+        }
+    }
+  else
+    {
+      /* Unlock outparam because it has been updated. */
+
+      unlock_evtbufinst(inst, dev);
+      if (ret < 0)
+        {
+          /* Error return means that the event will be discarded */
+
+          return ERROR;
+        }
+    }
+
+  /* OK return means that the event will be notified to the daemon. */
+
+  return OK;
+}
+
+/****************************************************************************
  * Name: altcom_recvthread
  ****************************************************************************/
 
@@ -831,12 +938,9 @@ static int altcom_recvthread(int argc, FAR char *argv[])
   bool is_running = true;
   FAR struct alt_container_s *head;
   FAR struct alt_container_s *container;
-  uint16_t cid;
-  uint16_t tid;
-  uint8_t altver;
-  parse_handler_t handler;
   uint64_t bitmap = 0ULL;
   int recvedlen = 0;
+  uint32_t reason;
 
   m_info("recv thread start\n");
 
@@ -856,7 +960,21 @@ static int altcom_recvthread(int argc, FAR char *argv[])
           recvedlen += ret;
 
           ret = altcom_is_pkt_ok(g_recvbuff, recvedlen);
-          if (ret > 0)
+          if (ret == 0)
+            {
+              ret = parse_altcompkt(dev, g_recvbuff, recvedlen, &bitmap,
+                                    &container);
+              if (ret == OK)
+                {
+                  pollnotify(dev, bitmap, container);
+                }
+              else
+                {
+                  dev->discardcnt++;
+                  m_err("discard event %lu\n", dev->discardcnt);
+                }
+            }
+          else if (ret > 0)
             {
               /* Cases in which fragmented packets are received.
                * Therefore, the receive process is performed again.
@@ -866,8 +984,7 @@ static int altcom_recvthread(int argc, FAR char *argv[])
                      ret);
               continue;
             }
-
-          if (ret < 0)
+          else
             {
               /* Forced reset of modem due to packet format error detected */
 
@@ -875,222 +992,52 @@ static int altcom_recvthread(int argc, FAR char *argv[])
 
               altmdm_reset();
             }
-          else
+        }
+      else if (ret == ALTMDM_RETURN_RESET_PKT)
+        {
+          m_info("recieve ALTMDM_RETURN_RESET_PKT\n");
+          set_senddisable(dev, true);
+        }
+      else if (ret == ALTMDM_RETURN_RESET_V1 ||
+               ret == ALTMDM_RETURN_RESET_V4)
+        {
+          reason = altmdm_get_reset_reason();
+
+          m_info("recieve ALTMDM_RETURN_RESET_V%s reason: %d\n",
+                 (ret == ALTMDM_RETURN_RESET_V1) ? "1" : "4",
+                 reason);
+
+          ret = write_evtbuff_byidx(dev, 0, write_restart_param,
+                                    (FAR void *)&reason);
+
+          /* If there is a waiting list,
+           * replace it with the replay list.
+           */
+
+          head = remove_list_all(&dev->waitlist);
+          pollnotify(dev, ALT1250_EVTBIT_RESET, head);
+        }
+      else if (ret == ALTMDM_RETURN_SUSPENDED)
+        {
+          m_info("recieve ALTMDM_RETURN_SUSPENDED\n");
+          nxsem_post(&dev->rxthread_sem);
+          while (1)
             {
-              bool is_discard = false;
-
-              /* parse ALTCOM command ID and transaction ID from header */
-
-              cid = parse_cid((FAR struct altcom_cmdhdr_s *)g_recvbuff);
-              tid = parse_tid((FAR struct altcom_cmdhdr_s *)g_recvbuff);
-              altver = get_altver(
-                    (FAR struct altcom_cmdhdr_s *)g_recvbuff);
-
-              m_info("receive cid:0x%04x tid:0x%04x\n", cid, tid);
-
-              /* Is error indication packet?
-               * This packet is a response to a command that is not supported
-               * by the ALT1250. The header of the request packet is included
-               * in the contents of the this packet.
+              /* After receiving a suspend event, the ALT1250 driver
+               * does not accept any requests and must stay alive.
                */
 
-              if (is_errind(cid))
-                {
-                  /* Get ALTCOM command ID and transaction ID
-                   * from error indication packet
-                   */
-
-                  cid = parse_cid4errind(
-                    (FAR struct altcom_cmdhdr_s *)g_recvbuff);
-                  tid = parse_tid4errind(
-                    (FAR struct altcom_cmdhdr_s *)g_recvbuff);
-
-                  m_info("receive errind cid:0x%04x tid:0x%04x\n", cid, tid);
-
-                  cid |= ALTCOM_CMDID_REPLY_BIT;
-                  container = remove_list(&dev->waitlist, cid, tid);
-                  if (container)
-                    {
-                      /* It means that requested command not implemented
-                       * by modem
-                       */
-
-                      container->result = -ENOSYS;
-                    }
-                  else
-                    {
-                      /* Discard the event packet */
-
-                      is_discard = true;
-
-                      m_warn("container is not found\n");
-                    }
-                }
-              else
-                {
-                  container = remove_list(&dev->waitlist, cid, tid);
-
-                  handler = get_parsehdlr(cid, altver);
-                  if (handler)
-                    {
-                      FAR uint8_t *payload = get_payload(
-                        (FAR struct altcom_cmdhdr_s *)g_recvbuff);
-
-                      if (container)
-                        {
-                          m_info("handler and container is found\n");
-
-                          bitmap = get_bitmap(dev, cid, altver);
-
-                          /* Perform parse handler */
-
-                          container->result = handler(dev, payload,
-                            get_payload_len(
-                              (FAR struct altcom_cmdhdr_s *)g_recvbuff),
-                            altver, container->outparam,
-                            container->outparamlen, &bitmap);
-                        }
-                      else
-                        {
-                          FAR alt_evtbuf_inst_t *inst;
-
-                          m_warn("container is not found\n");
-
-                          /* If the state of the instance is NotWritable,
-                           * instanse will be returned as NULL.
-                           */
-
-                          inst = get_evtbuffinst_withlock(dev, cid, altver,
-                                                          &bitmap);
-                          if (inst)
-                            {
-                              /* Perform parse handler */
-
-                              ret = handler(dev, payload, get_payload_len(
-                                (FAR struct altcom_cmdhdr_s *)g_recvbuff),
-                                altver, inst->outparam, inst->outparamlen,
-                                &bitmap);
-
-                              unlock_evtbufinst(inst, dev);
-
-                              if (ret >= 0)
-                                {
-                                  write_evtbitmap(dev, bitmap);
-                                }
-                              else
-                                {
-                                  /* Discard the event packet */
-
-                                  is_discard = true;
-                                }
-                            }
-                          else
-                            {
-                              /* Discard the event packet */
-
-                              is_discard = true;
-                            }
-                        }
-                    }
-                  else if (container)
-                    {
-                      container->result = -ENOSYS;
-                      m_warn("handler is not found\n");
-                    }
-                  else
-                    {
-                      /* Discard the event packet */
-
-                      is_discard = true;
-
-                      m_warn("container and handler is not found\n");
-                    }
-                }
-
-              if (container)
-                {
-                  if (container->cmdid & LTE_CMDOPT_ASYNC_BIT)
-                    {
-                      bitmap |= ALT1250_EVTBIT_REPLY;
-                    }
-                  else
-                    {
-                      bitmap = ALT1250_EVTBIT_REPLY;
-                    }
-
-                  write_evtbitmapwithlist(dev, bitmap, container);
-                }
-
-              if (is_discard)
-                {
-                  dev->discardcnt++;
-                  m_err("discard event %lu\n", dev->discardcnt);
-                }
-              else
-                {
-                  pollnotify(dev);
-                }
+              sleep(1);
             }
+        }
+      else if (ret == ALTMDM_RETURN_EXIT)
+        {
+          m_info("recieve ALTMDM_RETURN_EXIT\n");
+          is_running = false;
         }
       else
         {
-          switch (ret)
-            {
-              case ALTMDM_RETURN_RESET_PKT:
-                {
-                  m_info("recieve ALTMDM_RETURN_RESET_PKT\n");
-                  set_senddisable(dev, true);
-                }
-                break;
-
-              case ALTMDM_RETURN_RESET_V1:
-              case ALTMDM_RETURN_RESET_V4:
-                {
-                  uint32_t reason = altmdm_get_reset_reason();
-
-                  m_info("recieve ALTMDM_RETURN_RESET_V1/V4\n");
-
-                  ret = write_evtbuff_byidx(dev, 0, write_restart_param,
-                    (FAR void *)&reason);
-
-                  /* If there is a waiting list,
-                   * replace it with the replay list.
-                   */
-
-                  head = remove_list_all(&dev->waitlist);
-
-                  write_evtbitmapwithlist(dev, ALT1250_EVTBIT_RESET, head);
-                  pollnotify(dev);
-                }
-                break;
-
-              case ALTMDM_RETURN_EXIT:
-                {
-                  m_info("recieve ALTMDM_RETURN_EXIT\n");
-                  is_running = false;
-                }
-                break;
-
-
-              case ALTMDM_RETURN_SUSPENDED:
-                {
-                  m_info("recieve ALTMDM_RETURN_SUSPENDED\n");
-                  nxsem_post(&dev->rxthread_sem);
-                  while (1)
-                    {
-                      /* After receiving a suspend event, the ALT1250 driver
-                       * does not accept any requests and must stay alive.
-                       */
-
-                      sleep(1);
-                    }
-                }
-                break;
-
-              default:
-                DEBUGASSERT(0);
-                break;
-            }
+          DEBUGASSERT(0);
         }
 
       recvedlen = 0;
