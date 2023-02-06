@@ -158,6 +158,7 @@
 #define LTE_CMDID_GET_POWER_STAT                 _CMDGRP_POWER(0x3f)
 #define LTE_CMDID_SETCTXCB                       _CMDGRP_NOMDM(0x40)
 #define LTE_CMDID_COUNTWLOCK                     _CMDGRP_POWER(0x41)
+#define LTE_CMDID_REPEVT_DUMMY                   _CMDGRP_EVENT(0x42)
 
 #define LTE_CMDID_ACCEPT                         _CMDGRP_NORMAL(0x50)
 #define LTE_CMDID_BIND                           _CMDGRP_NORMAL(0x51)

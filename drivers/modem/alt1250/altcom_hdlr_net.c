@@ -35,6 +35,7 @@
 #include <nuttx/wireless/lte/lte_ioctl.h>
 
 #include "altcom_cmd.h"
+#include "alt1250.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -1040,10 +1041,8 @@ int32_t altcom_repevt_pkt_parse(FAR struct alt1250_dev_s *dev,
                                 uint8_t altver, FAR void **arg,
                                 size_t arglen, FAR uint64_t *bitmap)
 {
-  int32_t ret = 0;
-  FAR uint8_t *flag  = (FAR uint8_t *)arg[0];
-  FAR uint32_t *simstat = (FAR uint32_t *)arg[1];
-  FAR lte_localtime_t *ltime = (FAR lte_localtime_t *)arg[2];
+  int32_t ret = -ENOTSUP;
+  alt_evtbuf_inst_t *inst;
 
   if (altver == ALTCOM_VER1)
     {
@@ -1054,27 +1053,32 @@ int32_t altcom_repevt_pkt_parse(FAR struct alt1250_dev_s *dev,
         {
           case APICMD_REPORT_EVT_TYPE_LTIME:
             {
-              parse_ltime(&in->u.ltime, ltime);
-              *flag |= ALTCOM_REPEVT_FLAG_LTIME;
-            }
-            break;
-
-          case APICMD_REPORT_EVT_TYPE_SIMD:
-            {
-              ret = parse_simd(&in->u.simd, simstat);
-              if (ret == 0)
+              *bitmap = get_event_lapibuffer(dev, LTE_CMDID_REPLTIME, &inst);
+              if (*bitmap != 0ULL)
                 {
-                  *flag |= ALTCOM_REPEVT_FLAG_SIMSTAT;
+                  FAR lte_localtime_t *ltime = inst->outparam[0];
+                  parse_ltime(&in->u.ltime, ltime);
+                  ret = 0;
                 }
             }
             break;
 
+          case APICMD_REPORT_EVT_TYPE_SIMD:
           case APICMD_REPORT_EVT_TYPE_SIMSTATE:
             {
-              ret = parse_simstate(&in->u.simstate, simstat);
-              if (ret == 0)
+              *bitmap = get_event_lapibuffer(dev, LTE_CMDID_REPSIMSTAT,
+                                             &inst);
+              if (*bitmap != 0ULL)
                 {
-                  *flag |= ALTCOM_REPEVT_FLAG_SIMSTAT;
+                  FAR uint32_t *simstat = inst->outparam[0];
+                  if (in->type == APICMD_REPORT_EVT_TYPE_SIMD)
+                    {
+                      ret = parse_simd(&in->u.simd, simstat);
+                    }
+                  else
+                    {
+                      ret = parse_simstate(&in->u.simstate, simstat);
+                    }
                 }
             }
             break;
@@ -1096,27 +1100,32 @@ int32_t altcom_repevt_pkt_parse(FAR struct alt1250_dev_s *dev,
         {
           case APICMD_REPORT_EVT_TYPE_LTIME:
             {
-              parse_ltime(&in->u.ltime, ltime);
-              *flag |= ALTCOM_REPEVT_FLAG_LTIME;
-            }
-            break;
-
-          case APICMD_REPORT_EVT_TYPE_SIMD:
-            {
-              ret = parse_simd(&in->u.simd, simstat);
-              if (ret == 0)
+              *bitmap = get_event_lapibuffer(dev, LTE_CMDID_REPLTIME, &inst);
+              if (*bitmap != 0ULL)
                 {
-                  *flag |= ALTCOM_REPEVT_FLAG_SIMSTAT;
+                  FAR lte_localtime_t *ltime = inst->outparam[0];
+                  parse_ltime(&in->u.ltime, ltime);
+                  ret = 0;
                 }
             }
             break;
 
+          case APICMD_REPORT_EVT_TYPE_SIMD:
           case APICMD_REPORT_EVT_TYPE_SIMSTATE:
             {
-              ret = parse_simstate(&in->u.simstate, simstat);
-              if (ret == 0)
+              *bitmap = get_event_lapibuffer(dev, LTE_CMDID_REPSIMSTAT,
+                                             &inst);
+              if (*bitmap != 0ULL)
                 {
-                  *flag |= ALTCOM_REPEVT_FLAG_SIMSTAT;
+                  FAR uint32_t *simstat = inst->outparam[0];
+                  if (ntohs(in->type) == APICMD_REPORT_EVT_TYPE_SIMD)
+                    {
+                      ret = parse_simd(&in->u.simd, simstat);
+                    }
+                  else
+                    {
+                      ret = parse_simstate(&in->u.simstate, simstat);
+                    }
                 }
             }
             break;
