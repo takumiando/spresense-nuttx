@@ -165,6 +165,22 @@ int altmdm_take_wlock(void);
 int altmdm_give_wlock(void);
 
 /****************************************************************************
+ * Name: altmdm_count_wlock
+ *
+ * Description:
+ *   Returns the count of wakelocks currently acquired.
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   Returns the count of wakelocks currently acquired.
+ *
+ ****************************************************************************/
+
+int altmdm_count_wlock(void);
+
+/****************************************************************************
  * Name: altmdm_poweron
  *
  * Description:

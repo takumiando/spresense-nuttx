@@ -647,6 +647,10 @@ static int alt1250_power_control(FAR struct alt1250_dev_s *dev,
         ret = altmdm_give_wlock();
         break;
 
+      case LTE_CMDID_COUNTWLOCK:
+        ret = altmdm_count_wlock();
+        break;
+
 #ifdef CONFIG_PM
       case LTE_CMDID_STOPAPI:
       case LTE_CMDID_SUSPEND:
