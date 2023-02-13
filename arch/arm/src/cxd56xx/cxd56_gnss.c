@@ -169,6 +169,7 @@ struct cxd56_gnss_dev_s
   sem_t                           ioctllock;
   sem_t                           apiwait;
   int                             apiret;
+  bool                            has_event;
 };
 
 /****************************************************************************
@@ -2180,6 +2181,36 @@ static int cxd56_gnss_get_1pps_output(struct file *filep,
  */
 
 /****************************************************************************
+ * Name: cxd56_gnss_pollnotify
+ *
+ * Description:
+ *   Notify POLLIN event for poll
+ *
+ * Input Parameters:
+ *   dev - Gnss device structure pointer
+ *
+ ****************************************************************************/
+
+static void cxd56_gnss_pollnotify(struct cxd56_gnss_dev_s *dev)
+{
+  struct pollfd *fds;
+  int i;
+
+  for (i = 0; i < CONFIG_CXD56_GNSS_NPOLLWAITERS; i++)
+    {
+      fds = dev->fds[i];
+      if (fds)
+        {
+          fds->revents |= POLLIN;
+          gnssinfo("Report events: %08" PRIx32 "\n", fds->revents);
+          nxsem_post(fds->sem);
+        }
+    }
+
+  dev->has_event = true;
+}
+
+/****************************************************************************
  * Name: cxd56_gnss_wait_notify
  *
  * Description:
@@ -2427,7 +2458,6 @@ static void cxd56_gnss_default_sighandler(uint32_t data, void *userdata)
 {
   struct cxd56_gnss_dev_s *priv =
                           (struct cxd56_gnss_dev_s *)userdata;
-  int                      i;
   int                      ret;
   int                      dtype = CXD56_CPU1_GET_DATA(data);
 
@@ -2494,16 +2524,7 @@ static void cxd56_gnss_default_sighandler(uint32_t data, void *userdata)
       return;
     }
 
-  for (i = 0; i < CONFIG_CXD56_GNSS_NPOLLWAITERS; i++)
-    {
-      struct pollfd *fds = priv->fds[i];
-      if (fds)
-        {
-          fds->revents |= POLLIN;
-          gnssinfo("Report events: %08" PRIx32 "\n", fds->revents);
-          nxsem_post(fds->sem);
-        }
-    }
+  cxd56_gnss_pollnotify(priv);
 
   nxsem_post(&priv->devsem);
 
@@ -3042,6 +3063,13 @@ static int cxd56_gnss_poll(struct file *filep, struct pollfd *fds,
           ret       = -EBUSY;
           goto errout;
         }
+
+      /* Should we immediately notify on any of the requested events? */
+
+      if (priv->has_event)
+        {
+          cxd56_gnss_pollnotify(priv);
+        }
     }
   else if (fds->priv)
     {
@@ -3053,6 +3081,7 @@ static int cxd56_gnss_poll(struct file *filep, struct pollfd *fds,
 
       *slot                = NULL;
       fds->priv            = NULL;
+      priv->has_event      = false;
     }
 
 errout:
