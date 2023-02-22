@@ -61,15 +61,20 @@ int32_t altcom_getpinset_pkt_compose(FAR void **arg, size_t arglen,
 {
   int32_t size = 0;
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV1
   if (altver == ALTCOM_VER1)
     {
       *altcid = APICMDID_GET_PINSET;
     }
-  else if (altver == ALTCOM_VER4)
+  else
+#endif
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
+  if (altver == ALTCOM_VER4)
     {
       *altcid = APICMDID_GET_PINSET_V4;
     }
   else
+#endif
     {
       size = -ENOSYS;
     }
@@ -94,15 +99,20 @@ int32_t altcom_setpinlock_pkt_compose(FAR void **arg, size_t arglen,
 
   size = sizeof(struct apicmd_cmddat_setpinlock_s);
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV1
   if (altver == ALTCOM_VER1)
     {
       *altcid = APICMDID_SET_PIN_LOCK;
     }
-  else if (altver == ALTCOM_VER4)
+  else
+#endif
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
+  if (altver == ALTCOM_VER4)
     {
       *altcid = APICMDID_SET_PIN_LOCK_V4;
     }
   else
+#endif
     {
       size = -ENOSYS;
     }
@@ -138,15 +148,20 @@ int32_t altcom_setpincode_pkt_compose(FAR void **arg, size_t arglen,
 
   size = sizeof(struct apicmd_cmddat_setpincode_s);
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV1
   if (altver == ALTCOM_VER1)
     {
       *altcid = APICMDID_SET_PIN_CODE;
     }
-  else if (altver == ALTCOM_VER4)
+  else
+#endif
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
+  if (altver == ALTCOM_VER4)
     {
       *altcid = APICMDID_SET_PIN_CODE_V4;
     }
   else
+#endif
     {
       size = -ENOSYS;
     }
@@ -179,15 +194,20 @@ int32_t altcom_enterpin_pkt_compose(FAR void **arg, size_t arglen,
 
   size = sizeof(struct apicmd_cmddat_enterpin_s);
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV1
   if (altver == ALTCOM_VER1)
     {
       *altcid = APICMDID_ENTER_PIN;
     }
-  else if (altver == ALTCOM_VER4)
+  else
+#endif
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
+  if (altver == ALTCOM_VER4)
     {
       *altcid = APICMDID_ENTER_PIN_V4;
     }
   else
+#endif
     {
       size = -ENOSYS;
     }

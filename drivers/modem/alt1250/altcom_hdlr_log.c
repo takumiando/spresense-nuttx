@@ -107,15 +107,20 @@ int32_t altcom_logsave_pkt_compose(FAR void **arg, size_t arglen,
 
   out->pathlen = len + strlen(ALTCOM_LOGSPATH);
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV1
   if (altver == ALTCOM_VER1)
     {
       *altcid = APICMDID_CLOGS;
     }
-  else if (altver == ALTCOM_VER4)
+  else
+#endif
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
+  if (altver == ALTCOM_VER4)
     {
       *altcid = APICMDID_CLOGS_V4;
     }
   else
+#endif
     {
       size = -ENOSYS;
     }
@@ -135,15 +140,20 @@ int32_t altcom_loglist_pkt_compose(FAR void **arg, size_t arglen,
   out->listsize = LTE_LOG_LIST_SIZE;
   out->pathlen = len + strlen(ALTCOM_LOGSPATH);
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV1
   if (altver == ALTCOM_VER1)
     {
       *altcid = APICMDID_LOGLIST;
     }
-  else if (altver == ALTCOM_VER4)
+  else
+#endif
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
+  if (altver == ALTCOM_VER4)
     {
       *altcid = APICMDID_LOGLIST_V4;
     }
   else
+#endif
     {
       size = -ENOSYS;
     }
@@ -171,15 +181,20 @@ int32_t altcom_logopen_pkt_compose(FAR void **arg, size_t arglen,
   out->flags = htonl(ALTCOM_LOG_OPEN_FLAGS);
   out->mode = htonl(0);
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV1
   if (altver == ALTCOM_VER1)
     {
       *altcid = APICMDID_LOGOPEN;
     }
-  else if (altver == ALTCOM_VER4)
+  else
+#endif
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
+  if (altver == ALTCOM_VER4)
     {
       *altcid = APICMDID_LOGOPEN_V4;
     }
   else
+#endif
     {
       size = -ENOSYS;
     }
@@ -197,15 +212,20 @@ int32_t altcom_logclose_pkt_compose(FAR void **arg, size_t arglen,
 
   out->fd = htonl(fd);
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV1
   if (altver == ALTCOM_VER1)
     {
       *altcid = APICMDID_LOGCLOSE;
     }
-  else if (altver == ALTCOM_VER4)
+  else
+#endif
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
+  if (altver == ALTCOM_VER4)
     {
       *altcid = APICMDID_LOGCLOSE_V4;
     }
   else
+#endif
     {
       size = -ENOSYS;
     }
@@ -226,15 +246,20 @@ int32_t altcom_logread_pkt_compose(FAR void **arg, size_t arglen,
   out->readlen = (rlen > ALTCOM_LOG_READ_LEN_MAX) ?
                   htonl(ALTCOM_LOG_READ_LEN_MAX) : htonl(rlen);
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV1
   if (altver == ALTCOM_VER1)
     {
       *altcid = APICMDID_LOGREAD;
     }
-  else if (altver == ALTCOM_VER4)
+  else
+#endif
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
+  if (altver == ALTCOM_VER4)
     {
       *altcid = APICMDID_LOGREAD_V4;
     }
   else
+#endif
     {
       size = -ENOSYS;
     }
@@ -274,15 +299,20 @@ int32_t altcom_loglseek_pkt_compose(FAR void **arg, size_t arglen,
   out->fd = htonl(fd);
   out->offset = htonl(offset);
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV1
   if (altver == ALTCOM_VER1)
     {
       *altcid = APICMDID_LOGLSEEK;
     }
-  else if (altver == ALTCOM_VER4)
+  else
+#endif
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
+  if (altver == ALTCOM_VER4)
     {
       *altcid = APICMDID_LOGLSEEK_V4;
     }
   else
+#endif
     {
       size = -ENOSYS;
     }
@@ -307,15 +337,20 @@ int32_t altcom_logremove_pkt_compose(FAR void **arg, size_t arglen,
       return ret;
     }
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV1
   if (altver == ALTCOM_VER1)
     {
       *altcid = APICMDID_LOGREMOVE;
     }
-  else if (altver == ALTCOM_VER4)
+  else
+#endif
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
+  if (altver == ALTCOM_VER4)
     {
       *altcid = APICMDID_LOGREMOVE_V4;
     }
   else
+#endif
     {
       size = -ENOSYS;
     }

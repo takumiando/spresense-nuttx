@@ -85,6 +85,7 @@ int32_t altcom_injectimage_pkt_compose(FAR void **arg, size_t arglen,
   int len = *(int *)arg[1];
   bool mode = *(bool *)arg[2];
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV1
   if (altver == ALTCOM_VER1)
     {
       FAR struct apicmd_cmddat_fw_injectdeltaimg_s *out =
@@ -101,7 +102,10 @@ int32_t altcom_injectimage_pkt_compose(FAR void **arg, size_t arglen,
       memcpy(out->data, sending_data, len);
       size = sizeof(struct apicmd_cmddat_fw_injectdeltaimg_s);
     }
-  else if (altver == ALTCOM_VER4)
+  else
+#endif
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
+  if (altver == ALTCOM_VER4)
     {
       FAR struct apicmd_cmddat_fw_injectdeltaimg_v4_s *out =
        (FAR struct apicmd_cmddat_fw_injectdeltaimg_v4_s *)pktbuf;
@@ -117,6 +121,7 @@ int32_t altcom_injectimage_pkt_compose(FAR void **arg, size_t arglen,
       size = sizeof(struct apicmd_cmddat_fw_injectdeltaimg_v4_s) - 1 + len;
     }
   else
+#endif
     {
       size = -ENOSYS;
     }
@@ -131,15 +136,20 @@ int32_t altcom_getimagelen_pkt_compose(FAR void **arg, size_t arglen,
 {
   int32_t size = 0;
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV1
   if (altver == ALTCOM_VER1)
     {
       *altcid = APICMDID_FW_GETDELTAIMGLEN;
     }
-  else if (altver == ALTCOM_VER4)
+  else
+#endif
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
+  if (altver == ALTCOM_VER4)
     {
       *altcid = APICMDID_FW_GETDELTAIMGLEN_V4;
     }
   else
+#endif
     {
       size = -ENOSYS;
     }
@@ -154,15 +164,20 @@ int32_t altcom_execupdate_pkt_compose(FAR void **arg, size_t arglen,
 {
   int32_t size = 0;
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV1
   if (altver == ALTCOM_VER1)
     {
       *altcid = APICMDID_FW_EXECDELTAUPDATE;
     }
-  else if (altver == ALTCOM_VER4)
+  else
+#endif
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
+  if (altver == ALTCOM_VER4)
     {
       *altcid = APICMDID_FW_EXECDELTAUPDATE_V4;
     }
   else
+#endif
     {
       size = -ENOSYS;
     }
@@ -177,15 +192,20 @@ int32_t altcom_getupdateres_pkt_compose(FAR void **arg, size_t arglen,
 {
   int32_t size = 0;
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV1
   if (altver == ALTCOM_VER1)
     {
       *altcid = APICMDID_FW_GETUPDATERESULT;
     }
-  else if (altver == ALTCOM_VER4)
+  else
+#endif
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
+  if (altver == ALTCOM_VER4)
     {
       *altcid = APICMDID_FW_GETUPDATERESULT_V4;
     }
   else
+#endif
     {
       size = -ENOSYS;
     }

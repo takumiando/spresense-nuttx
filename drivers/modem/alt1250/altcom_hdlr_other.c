@@ -55,15 +55,20 @@ int32_t altcom_getimei_pkt_compose(FAR void **arg, size_t arglen,
 {
   int32_t size = 0;
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV1
   if (altver == ALTCOM_VER1)
     {
       *altcid = APICMDID_GET_IMEI;
     }
-  else if (altver == ALTCOM_VER4)
+  else
+#endif
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
+  if (altver == ALTCOM_VER4)
     {
       *altcid = APICMDID_GET_IMEI_V4;
     }
   else
+#endif
     {
       size = -ENOSYS;
     }
@@ -84,17 +89,22 @@ int32_t altcom_sendatcmd_pkt_compose(FAR void **arg, size_t arglen,
   memcpy(pktbuf, cmd + ATCMD_HEADER_LEN, size);
   pktbuf[size - ATCMD_FOOTER_LEN] = '\0';
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV1
   if (altver == ALTCOM_VER1)
     {
       size = -ENOTSUP;
     }
-  else if (altver == ALTCOM_VER4)
+  else
+#endif
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
+  if (altver == ALTCOM_VER4)
     {
       *altcid = APICMDID_SEND_ATCMD_V4;
     }
   else
+#endif
     {
-      size = -ENOSYS;
+      size = -ENOTSUP;
     }
 
   return size;
@@ -178,10 +188,13 @@ int32_t altcom_urc_event_pkt_parse(FAR struct alt1250_dev_s *dev,
                                    size_t arglen, FAR uint64_t *bitmap)
 {
   int32_t ret = -ENOTSUP;
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
   uint32_t lcmdid = 0;
   alt_evtbuf_inst_t *inst;
   lwm2mstub_hndl_t lwm2m_urc_handler;
+#endif
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
   if (altver == ALTCOM_VER4)
     {
       pktbuf[pktsz] = '\0';
@@ -196,6 +209,7 @@ int32_t altcom_urc_event_pkt_parse(FAR struct alt1250_dev_s *dev,
                                        inst->outparam, inst->outparamlen);
         }
     }
+#endif
 
   return ret;
 }

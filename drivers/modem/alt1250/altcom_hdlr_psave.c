@@ -105,6 +105,7 @@ static int32_t altcombs_convert_api_edrx_value(
 
   /* act_type check for version V4 or later */
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV1
   if (altver == ALTCOM_VER1)
     {
       if (api_edrx->act_type == LTE_EDRX_ACTTYPE_WBS1)
@@ -122,7 +123,10 @@ static int32_t altcombs_convert_api_edrx_value(
           return -EPERM;
         }
     }
-  else if (altver == ALTCOM_VER4)
+  else
+#endif
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
+  if (altver == ALTCOM_VER4)
     {
       if (api_edrx->act_type == LTE_EDRX_ACTTYPE_WBS1)
         {
@@ -144,6 +148,7 @@ static int32_t altcombs_convert_api_edrx_value(
         }
     }
   else
+#endif
     {
       return -ENOSYS;
     }
@@ -339,12 +344,16 @@ int32_t altcom_getedrx_pkt_compose(FAR void **arg, size_t arglen,
 {
   int32_t size = 0;
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV1
   if (altver == ALTCOM_VER1)
     {
       size = 0;
       *altcid = APICMDID_GET_EDRX;
     }
-  else if (altver == ALTCOM_VER4)
+  else
+#endif
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
+  if (altver == ALTCOM_VER4)
     {
       FAR struct apicmd_cmddat_getedrx_v4_s *out =
         (FAR struct apicmd_cmddat_getedrx_v4_s *)pktbuf;
@@ -354,6 +363,7 @@ int32_t altcom_getedrx_pkt_compose(FAR void **arg, size_t arglen,
       *altcid = APICMDID_GET_EDRX_V4;
     }
   else
+#endif
     {
       size = -ENOTSUP;
     }
@@ -379,15 +389,20 @@ int32_t altcom_setedrx_pkt_compose(FAR void **arg, size_t arglen,
       size = ret;
     }
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV1
   if (altver == ALTCOM_VER1)
     {
       *altcid = APICMDID_SET_EDRX;
     }
-  else if (altver == ALTCOM_VER4)
+  else
+#endif
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
+  if (altver == ALTCOM_VER4)
     {
       *altcid = APICMDID_SET_EDRX_V4;
     }
   else
+#endif
     {
       size = -ENOSYS;
     }
@@ -401,12 +416,16 @@ int32_t altcom_getdedrx_pkt_compose(FAR void **arg, size_t arglen,
 {
   int32_t size = 0;
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV1
   if (altver == ALTCOM_VER1)
     {
       size = 0;
       *altcid = APICMDID_GET_DYNAMICEDRX;
     }
-  else if (altver == ALTCOM_VER4)
+  else
+#endif
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
+  if (altver == ALTCOM_VER4)
     {
       FAR struct apicmd_cmddat_getedrx_v4_s *out =
         (FAR struct apicmd_cmddat_getedrx_v4_s *)pktbuf;
@@ -416,6 +435,7 @@ int32_t altcom_getdedrx_pkt_compose(FAR void **arg, size_t arglen,
       *altcid = APICMDID_GET_EDRX_V4;
     }
   else
+#endif
     {
       size = -ENOTSUP;
     }
@@ -429,12 +449,16 @@ int32_t altcom_getpsm_pkt_compose(FAR void **arg, size_t arglen,
 {
   int32_t size = 0;
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV1
   if (altver == ALTCOM_VER1)
     {
       size = 0;
       *altcid = APICMDID_GET_PSM;
     }
-  else if (altver == ALTCOM_VER4)
+  else
+#endif
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
+  if (altver == ALTCOM_VER4)
     {
       FAR struct apicmd_cmddat_getpsm_v4_s *out =
         (FAR struct apicmd_cmddat_getpsm_v4_s *)pktbuf;
@@ -445,6 +469,7 @@ int32_t altcom_getpsm_pkt_compose(FAR void **arg, size_t arglen,
       *altcid = APICMDID_GET_PSM_V4;
     }
   else
+#endif
     {
       size = -ENOTSUP;
     }
@@ -470,15 +495,20 @@ int32_t altcom_setpsm_pkt_compose(FAR void **arg, size_t arglen,
 
   size = sizeof(struct apicmd_cmddat_setpsm_s);
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV1
   if (altver == ALTCOM_VER1)
     {
       *altcid = APICMDID_SET_PSM;
     }
-  else if (altver == ALTCOM_VER4)
+  else
+#endif
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
+  if (altver == ALTCOM_VER4)
     {
       *altcid = APICMDID_SET_PSM_V4;
     }
   else
+#endif
     {
       size = -ENOSYS;
     }
@@ -492,12 +522,16 @@ int32_t altcom_getdpsm_pkt_compose(FAR void **arg, size_t arglen,
 {
   int32_t size = 0;
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV1
   if (altver == ALTCOM_VER1)
     {
       size = 0;
       *altcid = APICMDID_GET_DYNAMICPSM;
     }
-  else if (altver == ALTCOM_VER4)
+  else
+#endif
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV4
+  if (altver == ALTCOM_VER4)
     {
       FAR struct apicmd_cmddat_getpsm_v4_s *out =
         (FAR struct apicmd_cmddat_getpsm_v4_s *)pktbuf;
@@ -508,6 +542,7 @@ int32_t altcom_getdpsm_pkt_compose(FAR void **arg, size_t arglen,
       *altcid = APICMDID_GET_PSM_V4;
     }
   else
+#endif
     {
       size = -ENOTSUP;
     }
@@ -521,11 +556,13 @@ int32_t altcom_getce_pkt_compose(FAR void **arg, size_t arglen,
 {
   int32_t size = 0;
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV1
   if (altver == ALTCOM_VER1)
     {
       *altcid = APICMDID_GET_CE;
     }
   else
+#endif
     {
       size = -ENOTSUP;
     }
@@ -538,8 +575,11 @@ int32_t altcom_setce_pkt_compose(FAR void **arg, size_t arglen,
                                  const size_t pktsz, FAR uint16_t *altcid)
 {
   int32_t size = 0;
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV1
   FAR lte_ce_setting_t *settings = (FAR lte_ce_setting_t *)arg[0];
+#endif
 
+#ifndef CONFIG_MODEM_ALT1250_DISABLE_PV1
   if (altver == ALTCOM_VER1)
     {
       FAR struct apicmd_cmddat_setce_s *out =
@@ -552,6 +592,7 @@ int32_t altcom_setce_pkt_compose(FAR void **arg, size_t arglen,
       *altcid = APICMDID_SET_CE;
     }
   else
+#endif
     {
       size = -ENOTSUP;
     }
