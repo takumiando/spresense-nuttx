@@ -3179,6 +3179,16 @@ static void cxd56_swap_buffer_rl(uint32_t addr, uint16_t size)
     }
 }
 
+static void send_message_underrun(FAR struct cxd56_dev_s *dev)
+{
+  struct audio_msg_s msg;
+
+  msg.msg_id = AUDIO_MSG_UNDERRUN;
+  msg.u.ptr = NULL;
+  dev->dev.upper(dev->dev.priv, AUDIO_CALLBACK_MESSAGE,
+                 (FAR struct ap_buffer_s *)&msg, OK);
+}
+
 static int cxd56_start_dma(FAR struct cxd56_dev_s *dev)
 {
   FAR struct ap_buffer_s *apb;
@@ -3211,6 +3221,8 @@ static int cxd56_start_dma(FAR struct cxd56_dev_s *dev)
           auderr("ERROR: Could not stop DMA transfer (%d)\n", ret);
           dev->running = false;
         }
+
+      send_message_underrun(dev);
 
       dev->state = CXD56_DEV_STATE_BUFFERING;
     }
