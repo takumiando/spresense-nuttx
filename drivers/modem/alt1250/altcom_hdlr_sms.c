@@ -83,7 +83,8 @@ int32_t altcom_smssend_pkt_compose(FAR void **arg, size_t arglen,
 
   if ((msg->header.destaddrlen % 2) || (msg->header.datalen % 2) ||
       (msg->header.destaddrlen > (SMS_MAX_ADDRLEN * 2)) ||
-      (msg->header.datalen > (SMS_MAX_DATALEN * 2)))
+      (msg->header.datalen > (SMS_MAX_DATALEN * 2)) ||
+      (scaddr->addrlen % 2) || (scaddr->addrlen > (SMS_MAX_ADDRLEN * 2)))
     {
       /* destaddrlen and datalen must be even numbers */
 
