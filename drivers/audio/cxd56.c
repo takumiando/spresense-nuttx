@@ -1729,12 +1729,12 @@ static void cxd56_init_dma(FAR struct cxd56_dev_s *dev)
           dev->state,
           dev->dma_handle);
 
-  dq_clear(&dev->up_pendq);
-  dq_clear(&dev->up_runq);
+  dq_init(&dev->up_pendq);
+  dq_init(&dev->up_runq);
 #ifdef CONFIG_AUDIO_CXD56_SRC
-  dq_clear(&dev->down_pendq);
-  dq_clear(&dev->down_runq);
-  dq_clear(&dev->down_doneq);
+  dq_init(&dev->down_pendq);
+  dq_init(&dev->down_runq);
+  dq_init(&dev->down_doneq);
 #endif
 
   ints = CXD56_DMA_INT_DONE | CXD56_DMA_INT_ERR | CXD56_DMA_INT_CMB;
@@ -3545,6 +3545,7 @@ static void *cxd56_workerthread(pthread_addr_t pvarg)
   unsigned int prio;
   int size;
   int ret;
+  irqstate_t flags;
 
   audinfo("Workerthread started.\n");
 
@@ -3647,6 +3648,13 @@ static void *cxd56_workerthread(pthread_addr_t pvarg)
 
   file_mq_close(&priv->mq);
   file_mq_unlink(priv->mqname);
+
+  /* Clean up queue */
+
+  flags = spin_lock_irqsave(&priv->lock);
+  dq_init(&priv->up_runq);
+  dq_init(&priv->up_pendq);
+  spin_unlock_irqrestore(&priv->lock, flags);
 
   /* Send AUDIO_MSG_COMPLETE to the client */
 
