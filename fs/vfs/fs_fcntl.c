@@ -147,8 +147,8 @@ static int file_vfcntl(FAR struct file *filep, int cmd, va_list ap)
           ret = file_ioctl(filep, FIONBIO, &nonblock);
           if (ret == OK)
             {
-              oflags          &=  (FFCNTL & ~O_NONBLOCK);
-              filep->f_oflags &= ~(FFCNTL & ~O_NONBLOCK);
+              oflags          &=  FFCNTL;
+              filep->f_oflags &= ~FFCNTL;
               filep->f_oflags |=  oflags;
 
               if ((filep->f_oflags & O_APPEND) != 0)
