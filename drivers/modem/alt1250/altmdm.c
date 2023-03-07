@@ -168,6 +168,7 @@ static uint32_t waitevt_state_idlewto(void);
 static uint32_t waitevt_state_idlewoto(void);
 static uint32_t waitevt_state_idlewotx(void);
 static uint32_t waitevt_state_hdrsreq(void);
+static uint32_t waitevt_state_gotsleep(void);
 static uint32_t waitevt_state_bodysreq(void);
 static uint32_t waitevt_state_sleeping(void);
 static uint32_t waitevt_state_delaynext(void);
@@ -249,7 +250,7 @@ static const struct state_func_s g_state_func[] =
   TABLE_CONTENT(BODYTRX,          common,      common,    bodytrx),
   TABLE_CONTENT(GOTRX,            common,      common,    gotrx),
   TABLE_CONTENT(GOTRST,           common,      common,    gotrst),
-  TABLE_CONTENT(GOTSLEEP,         common,      common,    gotsleep),
+  TABLE_CONTENT(GOTSLEEP,         common,    gotsleep,    gotsleep),
   TABLE_CONTENT(BACKTOIDLE,       common,      common,    backtoidle),
   TABLE_CONTENT(RETRECV,          common,      common,    retrecv),
   TABLE_CONTENT(FORCERST,         common,      common,    forcerst),
@@ -536,6 +537,10 @@ static uint32_t waitevt_state_sleep(void)
 static altmdm_state_t process_state_sleep(uint32_t event,
   altmdm_state_t state)
 {
+  /* The order of checking the events is related to processing
+   * priority, so be careful when making changes.
+   */
+
   if (event & EVENT_DESTROY)
     {
       altmdm_event_clear(&g_altmdm_dev.event, EVENT_DESTROY);
@@ -555,6 +560,10 @@ static altmdm_state_t process_state_sleep(uint32_t event,
     {
       state = ALTMDM_STATE_IDLE4RST;
     }
+  else if (event & EVENT_SUSPEND)
+    {
+      state = ALTMDM_STATE_SLEEP;
+    }
   else if (event & (EVENT_TXREQ | EVENT_RXREQ))
     {
       state = ALTMDM_STATE_IDLEWTO;
@@ -566,10 +575,6 @@ static altmdm_state_t process_state_sleep(uint32_t event,
         {
           state = ALTMDM_STATE_IDLEWOTO;
         }
-    }
-  else if (event & EVENT_SUSPEND)
-    {
-      state = ALTMDM_STATE_SLEEP;
     }
 
   return state;
@@ -725,13 +730,17 @@ static uint32_t waitevt_state_idlewto(void)
 {
   return altmdm_event_wait(&g_altmdm_dev.event,
     EVENT_TXREQ | EVENT_RXREQ | EVENT_WLOCK |
-    EVENT_POWEROFF | EVENT_RESET | EVENT_DESTROY,
+    EVENT_POWEROFF | EVENT_RESET | EVENT_DESTROY | EVENT_SUSPEND,
     false, TIMEOUT_IDELEWTO_STATE);
 }
 
 static altmdm_state_t process_state_idlewto(uint32_t event,
   altmdm_state_t state)
 {
+  /* The order of checking the events is related to processing
+   * priority, so be careful when making changes.
+   */
+
   if (event & EVENT_DESTROY)
     {
       altmdm_event_clear(&g_altmdm_dev.event, EVENT_DESTROY);
@@ -747,6 +756,10 @@ static altmdm_state_t process_state_idlewto(uint32_t event,
       altmdm_event_clear(&g_altmdm_dev.event, EVENT_RESET);
       state = ALTMDM_STATE_FORCERST;
     }
+  else if (event & EVENT_SUSPEND)
+    {
+      state = ALTMDM_STATE_SLEEPSET;
+    }
   else if (event & EVENT_TXREQ)
     {
       state = ALTMDM_STATE_TXPREPARE;
@@ -754,10 +767,6 @@ static altmdm_state_t process_state_idlewto(uint32_t event,
   else if (event & EVENT_RXREQ)
     {
       state = ALTMDM_STATE_HDRSREQ;
-    }
-  else if (event & EVENT_SUSPEND)
-    {
-      state = ALTMDM_STATE_SLEEPSET;
     }
   else if (event & EVENT_WLOCK)
     {
@@ -1271,6 +1280,22 @@ static altmdm_state_t process_state_gotrst(uint32_t event,
 /****************************************************************************
  * GOTSLEEP state
  ****************************************************************************/
+
+static uint32_t waitevt_state_gotsleep(void)
+{
+  uint32_t evt = altmdm_event_refer(&g_altmdm_dev.event);
+
+  /* GOTSLEEP state only check current event flags for SUSPEND. */
+
+  if ((evt & EVENT_SUSPEND) != 0)
+    {
+      return EVENT_SUSPEND;
+    }
+  else
+    {
+      return 0;
+    }
+}
 
 static altmdm_state_t process_state_gotsleep(uint32_t event,
   altmdm_state_t state)
