@@ -1907,14 +1907,16 @@ FAR const struct sock_intf_s *
   else
 #endif
 #ifdef NET_UDP_HAVE_STACK
-  if (type == SOCK_DGRAM && (protocol == 0 || protocol == IPPROTO_UDP))
+  if ((type == SOCK_DGRAM || type == SOCK_CTRL) &&
+      (protocol == 0 || protocol == IPPROTO_UDP))
     {
       return &g_inet_sockif;
     }
   else
 #endif
 #ifdef NET_TCP_HAVE_STACK
-  if (type == SOCK_STREAM && (protocol == 0 || protocol == IPPROTO_TCP))
+  if ((type == SOCK_STREAM || type == SOCK_CTRL) &&
+      (protocol == 0 || protocol == IPPROTO_TCP))
     {
       return &g_inet_sockif;
     }
