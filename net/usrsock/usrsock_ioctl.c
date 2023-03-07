@@ -32,6 +32,7 @@
 #include <debug.h>
 
 #include <sys/socket.h>
+#include <sys/ioctl.h>
 #include <nuttx/net/net.h>
 #include <nuttx/net/usrsock.h>
 #ifdef CONFIG_NETDEV_WIRELESS_IOCTL
@@ -173,6 +174,25 @@ int usrsock_ioctl(FAR struct socket *psock, int cmd, FAR void *arg,
   };
 
   int ret;
+
+  if (cmd == FIONBIO)
+    {
+      int nonblock = *((FAR int *)arg);
+
+      net_lock();
+
+      if (nonblock)
+        {
+          conn->sconn.s_flags |= _SF_NONBLOCK;
+        }
+      else
+        {
+          conn->sconn.s_flags &= ~_SF_NONBLOCK;
+        }
+
+      net_unlock();
+      return OK;
+    }
 
   net_lock();
 
